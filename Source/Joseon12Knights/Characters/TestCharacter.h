@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(Blueprintable)
 class JOSEON12KNIGHTS_API ATestCharacter : public APlayerCharacter
 {
 	GENERATED_BODY()

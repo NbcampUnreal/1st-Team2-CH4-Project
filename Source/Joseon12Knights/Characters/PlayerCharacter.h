@@ -6,7 +6,7 @@
 #include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
 
-UCLASS(Abstract)
+UCLASS(Abstract, NotBlueprintable)
 class JOSEON12KNIGHTS_API APlayerCharacter : public ACharacter
 {
 	GENERATED_BODY()
