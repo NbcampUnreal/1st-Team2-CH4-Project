@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "PlayerCharacter.generated.h"
 
+struct FInputActionValue;
+
 UCLASS(Abstract, NotBlueprintable)
 class JOSEON12KNIGHTS_API APlayerCharacter : public ACharacter
 {
@@ -28,4 +30,12 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UFUNCTION()
+	void Move(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void StartJump(const FInputActionValue& Value);
+
+	UFUNCTION()
+	void StopJump(const FInputActionValue& Value);
 };
