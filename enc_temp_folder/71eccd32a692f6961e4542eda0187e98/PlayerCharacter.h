@@ -49,10 +49,6 @@ public:
 	void Roll(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void Guard(const FInputActionValue& Value);
-
-
-	UFUNCTION()
 	virtual void NormalAttack(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::NormalAttack, );
 	UFUNCTION()
 	virtual void Skill(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Skill, );

@@ -6,9 +6,9 @@
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+ 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	
 	MoveSpeed = 50.f;
 	DashDistance = 2000.f;
 }
@@ -17,7 +17,7 @@ APlayerCharacter::APlayerCharacter()
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 }
 
 // Called every frame
@@ -86,26 +86,6 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 				);
 			}
 
-			if (PlayerController->GuardAction)
-			{
-				EnhancedInput->BindAction(
-					PlayerController->GuardAction,
-					ETriggerEvent::Started,
-					this,
-					&APlayerCharacter::Guard
-				);
-			}
-
-			if (PlayerController->GuardAction)
-			{
-				EnhancedInput->BindAction(
-					PlayerController->GuardAction,
-					ETriggerEvent::Completed,
-					this,
-					&APlayerCharacter::Guard
-				);
-			}
-
 			if (PlayerController->UltimateAction)
 			{
 				EnhancedInput->BindAction(
@@ -124,7 +104,7 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 	float AxisValue = Value.Get<float>();
 
 	AddMovementInput(GetActorForwardVector(), AxisValue * MoveSpeed);
-
+	
 	float Direction = AxisValue < 0 ? 1 : -1;
 	FRotator CurrentRotation = FRotator(0.f, Direction * 90.f, 0.f);
 	GetMesh()->SetWorldRotation(CurrentRotation);
@@ -149,16 +129,9 @@ void APlayerCharacter::StopJump(const FInputActionValue& Value)
 void APlayerCharacter::Roll(const FInputActionValue& Value)
 {
 	UE_LOG(LogTemp, Warning, TEXT("ROLL"));
-
+	
 	FVector Direction = GetMesh()->GetRightVector() * DashDistance;
 	LaunchCharacter(Direction, true, false);
-}
-
-void APlayerCharacter::Guard(const FInputActionValue& Value)
-{
-	bool bIsGuard = Value.Get<bool>();
-
-	UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
 }
 
 

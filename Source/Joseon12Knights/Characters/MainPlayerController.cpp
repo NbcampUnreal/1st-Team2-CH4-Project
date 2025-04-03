@@ -1,13 +1,16 @@
 #include "MainPlayerController.h"
 #include "EnhancedInputSubsystems.h"
 
-AMainPlayerController::AMainPlayerController() : InputMappingContext(nullptr),
-MoveAction(nullptr),
-DirectionAction(nullptr),
-JumpAction(nullptr),
-AttackAction(nullptr)
+AMainPlayerController::AMainPlayerController()
+	: InputMappingContext(nullptr), 
+	MoveAction(nullptr),
+	JumpAction(nullptr),
+	NormalAttackAction(nullptr),
+	SkillAction(nullptr),
+	UltimateAction(nullptr),
+	RollAction(nullptr),
+	GuardAction(nullptr)
 {
-
 }
 
 void AMainPlayerController::BeginPlay()
@@ -21,11 +24,11 @@ void AMainPlayerController::BeginPlay()
 			if (InputMappingContext)
 			{
 				SubSystem->AddMappingContext(InputMappingContext, 0);
-
-				
 			}
 		}
 	}
 }
+
+
 
 
