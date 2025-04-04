@@ -1,16 +1,34 @@
 #include "TestCharacter.h"
-
-void ATestCharacter::NormalAttack(const FInputActionValue& Value)
-{
-	UE_LOG(LogTemp, Warning, TEXT("Normal Attack"));
-}
+#include "EnhancedInputComponent.h"
 
 void ATestCharacter::Skill(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Skill Attack"));
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance && SkillAttackMontage)
+	{
+		AnimInstance->StopAllMontages(1);
+		AnimInstance->Montage_Play(SkillAttackMontage);
+	}
+
+	if (Value.Get<bool>())
+	{
+		
+	}
 }
 
 void ATestCharacter::Ultimate(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Ultimate"));
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance && UltimateMontage)
+	{
+		AnimInstance->StopAllMontages(1);
+		AnimInstance->Montage_Play(UltimateMontage);
+	}
+
+	if (Value.Get<bool>())
+	{
+
+	}
 }

@@ -1,16 +1,37 @@
 #include "PlayerCharacter.h"
 #include "EnhancedInputComponent.h"
 #include "MainPlayerController.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 
 
 // Sets default values
-APlayerCharacter::APlayerCharacter()
+APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage(nullptr), UltimateMontage(nullptr)
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	MoveSpeed = 50.f;
 	DashDistance = 2000.f;
+
+	GetMesh()->SetRelativeLocation(FVector(0, 0, -90.f));
+	FRotator CurrentRotation = FRotator(0.f, -90.f, 0.f);
+	GetMesh()->SetWorldRotation(CurrentRotation);
+
+	ConstructorHelpers::FClassFinder<UAnimInstance> AnimBPClass(TEXT("/Game/Blueprints/Animations/ABP_Character.ABP_Character_C"));
+	if (AnimBPClass.Succeeded())
+	{
+		GetMesh()->SetAnimInstanceClass(AnimBPClass.Class);
+	}
+
+	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+	SpringArm->SetupAttachment(RootComponent);
+	SpringArm->TargetArmLength = 300.0f;
+	SpringArm->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
+
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
+	NormalAttackMontageIndex = 0;
 }
 
 // Called when the game starts or when spawned
@@ -102,7 +123,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 					PlayerController->GuardAction,
 					ETriggerEvent::Completed,
 					this,
-					&APlayerCharacter::Guard
+					&APlayerCharacter::ReleaseGuard
 				);
 			}
 
@@ -150,6 +171,14 @@ void APlayerCharacter::Roll(const FInputActionValue& Value)
 {
 	UE_LOG(LogTemp, Warning, TEXT("ROLL"));
 
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance && DashMontage && !AnimInstance->Montage_IsPlaying(DashMontage))
+	{
+		AnimInstance->StopAllMontages(1);
+		AnimInstance->Montage_Play(DashMontage);
+	}
+
 	FVector Direction = GetMesh()->GetRightVector() * DashDistance;
 	LaunchCharacter(Direction, true, false);
 }
@@ -159,6 +188,29 @@ void APlayerCharacter::Guard(const FInputActionValue& Value)
 	bool bIsGuard = Value.Get<bool>();
 
 	UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
+}
+
+void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
+{
+	bool bIsGuard = Value.Get<bool>();
+
+	UE_LOG(LogTemp, Warning, TEXT("Release GUARD %d "), bIsGuard);
+}
+
+void APlayerCharacter::NormalAttack(const FInputActionValue& Value)
+{
+	int Size = NormalAttackMontages.Num();
+	int PrevIndex = NormalAttackMontageIndex;
+	NormalAttackMontageIndex++;
+	UAnimMontage* NormalAttackMontage = NormalAttackMontages[NormalAttackMontageIndex % Size];
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance && NormalAttackMontage && !AnimInstance->Montage_IsPlaying(NormalAttackMontages[PrevIndex % Size]))
+	{
+		AnimInstance->StopAllMontages(1);
+		AnimInstance->Montage_Play(NormalAttackMontage);
+	}
 }
 
 
