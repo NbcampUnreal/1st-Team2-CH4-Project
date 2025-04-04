@@ -4,7 +4,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "GI_GameCoreInstance.h"
-//#include "GS_FighterState.h"
+#include "GS_FighterState.h"
 #include "GM_BaseMode.generated.h"
 
 UCLASS()
@@ -33,5 +33,5 @@ protected:
 	UGI_GameCoreInstance* GetGI() const;
 
 	// GameState 캐스팅 함수
-	//AGS_FighterState* GetGS() const;
+	AGS_FighterState* GetGS() const;
 };

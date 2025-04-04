@@ -37,9 +37,9 @@ UGI_GameCoreInstance* AGM_BaseMode::GetGI() const
 	return Cast<UGI_GameCoreInstance>(GetGameInstance());
 }
 
-/*
+
 AGS_FighterState* AGM_BaseMode::GetGS() const
 {
 	return GetGameState<AGS_FighterState>();
 }
-*/
+
