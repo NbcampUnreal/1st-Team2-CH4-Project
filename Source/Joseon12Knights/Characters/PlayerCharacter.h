@@ -51,6 +51,12 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 	USpringArmComponent* SpringArm;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment")
+	UStaticMeshComponent* WeaponComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment")
+	UStaticMeshComponent* ShieldComponent;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
