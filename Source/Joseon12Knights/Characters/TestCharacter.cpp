@@ -10,11 +10,6 @@ void ATestCharacter::Skill(const FInputActionValue& Value)
 		AnimInstance->StopAllMontages(1);
 		AnimInstance->Montage_Play(SkillAttackMontage);
 	}
-
-	if (Value.Get<bool>())
-	{
-		
-	}
 }
 
 void ATestCharacter::Ultimate(const FInputActionValue& Value)
@@ -25,10 +20,5 @@ void ATestCharacter::Ultimate(const FInputActionValue& Value)
 	{
 		AnimInstance->StopAllMontages(1);
 		AnimInstance->Montage_Play(UltimateMontage);
-	}
-
-	if (Value.Get<bool>())
-	{
-
 	}
 }
