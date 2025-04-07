@@ -19,10 +19,10 @@ public:
 	// Sets default values for this character's properties
 	APlayerCharacter();
 
-
-
 protected:
 	// Called when the game starts or when spawned
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Stat")
+	bool bIsDoubleJump;
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
@@ -65,6 +65,9 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UFUNCTION()
+	void Landed(const FHitResult& Hit);
+
+	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
 	UFUNCTION()
@@ -90,5 +93,4 @@ public:
 	virtual void Ultimate(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Ultimate, );
 private:
 	int NormalAttackMontageIndex;
-
 };

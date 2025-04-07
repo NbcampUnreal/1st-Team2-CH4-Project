@@ -3,6 +3,7 @@
 #include "MainPlayerController.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 
 // Sets default values
@@ -13,12 +14,21 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 
 	MoveSpeed = 50.f;
 	DashDistance = 2000.f;
+	JumpMaxCount = 2;
+	
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("/Game/ModularAnimalKnightsPolyart/Meshes/OneMeshCharacter/RabitSK.RabitSK"));
+	///Game/ModularAnimalKnightsPolyart/Meshes/OneMeshCharacter/RabitSK.RabitSK
+
+	if (MeshAsset.Succeeded())
+	{
+		GetMesh()->SetSkeletalMesh(MeshAsset.Object);
+	}
 
 	GetMesh()->SetRelativeLocation(FVector(0, 0, -90.f));
 	FRotator CurrentRotation = FRotator(0.f, -90.f, 0.f);
 	GetMesh()->SetWorldRotation(CurrentRotation);
 
-	ConstructorHelpers::FClassFinder<UAnimInstance> AnimBPClass(TEXT("/Game/Blueprints/Animations/ABP_Character.ABP_Character_C"));
+	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimBPClass(TEXT("/Game/Blueprints/Animations/ABP_Character.ABP_Character_C"));
 	if (AnimBPClass.Succeeded())
 	{
 		GetMesh()->SetAnimInstanceClass(AnimBPClass.Class);
@@ -35,13 +45,11 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 
 	WeaponComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon"));
 	WeaponComponent->SetupAttachment(GetMesh(), FName("WeaponSocket"));
-	//WeaponComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("WeaponSocket"));
 
 	WeaponComponent->SetRelativeRotation(FRotator(0.f, 0.f, -180.f));
 
 	ShieldComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Shield"));
 	ShieldComponent->SetupAttachment(GetMesh(), FName("ShieldSocket"));
-	//ShieldComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("ShieldSocket"));
 }
 
 // Called when the game starts or when spawned
@@ -49,6 +57,8 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	//WeaponComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName(TEXT("WeaponSocket")));
+	//ShieldComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName(TEXT("ShieldSocket")));
 }
 
 // Called every frame
@@ -81,7 +91,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 			{
 				EnhancedInput->BindAction(
 					PlayerController->JumpAction,
-					ETriggerEvent::Triggered,
+					ETriggerEvent::Started,
 					this,
 					&APlayerCharacter::StartJump
 				);
@@ -150,6 +160,13 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	}
 }
 
+void APlayerCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+	UE_LOG(LogTemp, Warning, TEXT("Land"));
+	bIsDoubleJump = false;
+}
+
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
 	float AxisValue = Value.Get<float>();
@@ -163,17 +180,22 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 
 void APlayerCharacter::StartJump(const FInputActionValue& Value)
 {
-	if (Value.Get<bool>())
+	if (JumpCurrentCount == 1)
 	{
-		Jump();
+		bIsDoubleJump = true;
+		UE_LOG(LogTemp, Warning, TEXT("Double Jump"));
 	}
+
+	Jump();
+
+	UE_LOG(LogTemp, Warning, TEXT("Jump %d"), JumpCurrentCount);
 }
 
 void APlayerCharacter::StopJump(const FInputActionValue& Value)
 {
 	if (!Value.Get<bool>())
 	{
-		StopJumping();
+		//StopJumping();
 	}
 }
 
@@ -181,16 +203,22 @@ void APlayerCharacter::Roll(const FInputActionValue& Value)
 {
 	UE_LOG(LogTemp, Warning, TEXT("ROLL"));
 
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-
-	if (AnimInstance && DashMontage && !AnimInstance->Montage_IsPlaying(DashMontage))
+	if (UCharacterMovementComponent* MoveComp = Cast<UCharacterMovementComponent>(GetMovementComponent()))
 	{
-		AnimInstance->StopAllMontages(1);
-		AnimInstance->Montage_Play(DashMontage);
-	}
+		if (!MoveComp->IsFalling())
+		{
+			UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-	FVector Direction = GetMesh()->GetRightVector() * DashDistance;
-	LaunchCharacter(Direction, true, false);
+			if (AnimInstance && DashMontage && !AnimInstance->Montage_IsPlaying(DashMontage))
+			{
+				AnimInstance->StopAllMontages(1);
+				AnimInstance->Montage_Play(DashMontage);
+			}
+
+			FVector Direction = GetMesh()->GetRightVector() * DashDistance;
+			LaunchCharacter(Direction, true, false);
+		}
+	}
 }
 
 void APlayerCharacter::Guard(const FInputActionValue& Value)
@@ -204,7 +232,7 @@ void APlayerCharacter::Guard(const FInputActionValue& Value)
 	if (AnimInstance && GuardMontage && !AnimInstance->Montage_IsPlaying(GuardMontage))
 	{
 		AnimInstance->StopAllMontages(1);
-		
+
 		AnimInstance->Montage_Play(GuardMontage);
 	}
 }
