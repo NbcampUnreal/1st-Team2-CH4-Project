@@ -32,6 +32,16 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
 	NormalAttackMontageIndex = 0;
+
+	WeaponComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon"));
+	WeaponComponent->SetupAttachment(GetMesh(), FName("WeaponSocket"));
+	//WeaponComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("WeaponSocket"));
+
+	WeaponComponent->SetRelativeRotation(FRotator(0.f, 0.f, -180.f));
+
+	ShieldComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Shield"));
+	ShieldComponent->SetupAttachment(GetMesh(), FName("ShieldSocket"));
+	//ShieldComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, FName("ShieldSocket"));
 }
 
 // Called when the game starts or when spawned
@@ -111,7 +121,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 			{
 				EnhancedInput->BindAction(
 					PlayerController->GuardAction,
-					ETriggerEvent::Started,
+					ETriggerEvent::Triggered,
 					this,
 					&APlayerCharacter::Guard
 				);
@@ -188,6 +198,15 @@ void APlayerCharacter::Guard(const FInputActionValue& Value)
 	bool bIsGuard = Value.Get<bool>();
 
 	UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance && GuardMontage && !AnimInstance->Montage_IsPlaying(GuardMontage))
+	{
+		AnimInstance->StopAllMontages(1);
+		
+		AnimInstance->Montage_Play(GuardMontage);
+	}
 }
 
 void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
@@ -195,6 +214,13 @@ void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 	bool bIsGuard = Value.Get<bool>();
 
 	UE_LOG(LogTemp, Warning, TEXT("Release GUARD %d "), bIsGuard);
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance && GuardMontage && !AnimInstance->Montage_IsPlaying(GuardMontage))
+	{
+		AnimInstance->Montage_Stop(0.1f, GuardMontage);
+	}
 }
 
 void APlayerCharacter::NormalAttack(const FInputActionValue& Value)
@@ -212,6 +238,7 @@ void APlayerCharacter::NormalAttack(const FInputActionValue& Value)
 		AnimInstance->Montage_Play(NormalAttackMontage);
 	}
 }
+
 
 
 
