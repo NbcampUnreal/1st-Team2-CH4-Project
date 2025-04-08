@@ -172,14 +172,12 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 {
 	float AxisValue = Value.Get<float>();
 
-	float Direction = AxisValue < 0 ? 1 : -1;
-	
-	//SetActorRotation(CurrentRotation);
-	//AddActorLocalRotation(CurrentRotation);
 	AddMovementInput(GetActorForwardVector(), AxisValue * MoveSpeed);
 
+	float Direction = AxisValue < 0 ? 1 : -1;
 	FRotator CurrentRotation = FRotator(0.f, Direction * 90.f, 0.f);
-	GetMesh()->SetWorldRotation(CurrentRotation);
+	SetActorRotation(CurrentRotation);
+	//GetMesh()->SetWorldRotation(CurrentRotation);
 }
 
 void APlayerCharacter::StartJump(const FInputActionValue& Value)

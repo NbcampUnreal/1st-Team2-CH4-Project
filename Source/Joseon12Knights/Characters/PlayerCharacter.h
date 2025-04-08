@@ -87,6 +87,13 @@ public:
 
 	UFUNCTION()
 	void NormalAttack(const FInputActionValue& Value);
+
+	UFUNCTION(Server, Unreliable)
+	void ServerAttack();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastAttack();
+
 	UFUNCTION()
 	virtual void Skill(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Skill, );
 	UFUNCTION()
