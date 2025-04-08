@@ -3,6 +3,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/InputSettings.h"
 
+
 void APC_MenuController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -39,17 +40,20 @@ void APC_MenuController::CheckAndShowUI()
 			bModeUIShown = true;
 		}
 	}
-	else if (!bCharacterUIShown && GS->bShowCharacterSelect)
+
+	else if (GS->bShowCharacterSelect && !bCharacterUIShown) 
 	{
 		if (CharacterSelectWidgetClass)
 		{
 			if (CurrentWidget) CurrentWidget->RemoveFromParent();
 			CurrentWidget = CreateWidget<UUserWidget>(this, CharacterSelectWidgetClass);
 			if (CurrentWidget) CurrentWidget->AddToViewport();
-			bCharacterUIShown = true;
+			bCharacterUIShown = true; 
 		}
 	}
 }
+
+
 
 AGS_FighterState* APC_MenuController::GetGS() const
 {
@@ -68,6 +72,16 @@ void APC_MenuController::SetupInputComponent()
 	if (InputComponent)
 	{
 		InputComponent->BindAction("Start", IE_Pressed, this, &APC_MenuController::OnPressStart);
+		
+	}
+}
+
+
+void APC_MenuController::SelectCharacter(const FString& CharacterID)
+{
+	if (AGM_BaseMode* GM = Cast<AGM_BaseMode>(UGameplayStatics::GetGameMode(this)))
+	{
+		GM->OnCharacterSelected(this, CharacterID);
 	}
 }
 
@@ -90,13 +104,10 @@ void APC_MenuController::SelectVS()
 	}
 }
 
-
-// PC_MenuController.cpp
 void APC_MenuController::OnCharacterSelectConfirmed(int32 NumAI)
 {
 	if (UGI_GameCoreInstance* GI = GetGI())
 	{
-		// 최소 인원 체크 (싱글)
 		if (GI->SelectedPlayMode == EPlayMode::Single)
 		{
 			if (NumAI < 1)
@@ -117,13 +128,13 @@ void APC_MenuController::OnCharacterSelectConfirmed(int32 NumAI)
 				FPlayerLobbyInfo AI;
 				AI.PlayerName = FString::Printf(TEXT("AI_%d"), i + 1);
 				AI.bIsReady = true;
-				AI.SelectedCharacterID = TEXT("RandomAI"); // 또는 프리셋
+				AI.SelectedCharacterID = TEXT("RandomAI");
 				GI->PlayerLobbyInfos.Add(AI);
 			}
 
 			if (AGM_SingleMode* GM = Cast<AGM_SingleMode>(UGameplayStatics::GetGameMode(this)))
 			{
-				GM->ProceedToMatch(); // ConflictZone 맵 로딩
+				GM->ProceedToMatch(); 
 			}
 		}
 		else if (GI->SelectedPlayMode == EPlayMode::Online)
@@ -135,4 +146,30 @@ void APC_MenuController::OnCharacterSelectConfirmed(int32 NumAI)
 		}
 	}
 }
+
+void APC_MenuController::HandleBackToMainMenu()
+{
+	if (CurrentWidget)
+	{
+		CurrentWidget->RemoveFromParent();
+		CurrentWidget = nullptr;
+	}
+
+	if (ModeSelectWidgetClass)
+	{
+		CurrentWidget = CreateWidget<UUserWidget>(this, ModeSelectWidgetClass);
+		if (CurrentWidget)
+		{
+			CurrentWidget->AddToViewport();
+
+			FInputModeGameAndUI InputMode;
+			InputMode.SetWidgetToFocus(CurrentWidget->TakeWidget());
+			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			InputMode.SetHideCursorDuringCapture(false);
+			SetInputMode(InputMode);
+			bShowMouseCursor = true;
+		}
+	}
+}
+
 

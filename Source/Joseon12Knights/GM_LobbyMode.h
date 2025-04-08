@@ -13,7 +13,6 @@ class JOSEON12KNIGHTS_API AGM_LobbyMode : public AGM_BaseMode
 public:
 	UFUNCTION(Server, Reliable)
 	void Server_SetReady(APlayerController* PC);
-
 protected:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;

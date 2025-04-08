@@ -45,8 +45,7 @@ void AGM_LobbyMode::Server_SetReady_Implementation(APlayerController* PC)
 {
 	if (PC && PC->PlayerState)
 	{
-		APS_FighterPlayerState* FighterPS = Cast<APS_FighterPlayerState>(PC->PlayerState);
-		if (FighterPS)
+		if (APS_FighterPlayerState* FighterPS = Cast<APS_FighterPlayerState>(PC->PlayerState))
 		{
 			FighterPS->bIsReady = true;
 			UE_LOG(LogTemp, Log, TEXT("Player set ready: %s"), *PC->GetName());
@@ -54,3 +53,4 @@ void AGM_LobbyMode::Server_SetReady_Implementation(APlayerController* PC)
 		}
 	}
 }
+

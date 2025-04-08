@@ -14,6 +14,8 @@ class JOSEON12KNIGHTS_API APC_MenuController : public APlayerController
 {
 	GENERATED_BODY()
 
+public:
+	void HandleBackToMainMenu();
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -43,9 +45,11 @@ protected:
 	TSubclassOf<UUserWidget> CharacterSelectWidgetClass;
 
 	UFUNCTION(BlueprintCallable)
+	void SelectCharacter(const FString& CharacterID);
+
+	UFUNCTION(BlueprintCallable)
 	void SelectVS();
 
-	// PC_MenuController.h
 	UFUNCTION(BlueprintCallable)
 	void OnCharacterSelectConfirmed(int32 NumAI); // 싱글이면 AI 수 전달, 온라인이면 무시
 
