@@ -9,7 +9,6 @@
 // Sets default values
 APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage(nullptr), UltimateMontage(nullptr)
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	MoveSpeed = 50.f;
@@ -250,24 +249,4 @@ void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 		AnimInstance->Montage_Stop(0.1f, GuardMontage);
 	}
 }
-
-void APlayerCharacter::NormalAttack(const FInputActionValue& Value)
-{
-	int Size = NormalAttackMontages.Num();
-	int PrevIndex = NormalAttackMontageIndex;
-	NormalAttackMontageIndex++;
-	UAnimMontage* NormalAttackMontage = NormalAttackMontages[NormalAttackMontageIndex % Size];
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-
-	if (AnimInstance && NormalAttackMontage && !AnimInstance->Montage_IsPlaying(NormalAttackMontages[PrevIndex % Size]))
-	{
-		AnimInstance->StopAllMontages(1);
-		AnimInstance->Montage_Play(NormalAttackMontage);
-	}
-}
-
-
-
-
 

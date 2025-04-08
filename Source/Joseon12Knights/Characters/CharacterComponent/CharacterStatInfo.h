@@ -23,14 +23,11 @@ struct FCharacterStatInfo : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
 	float Defense;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
-	float MoveSpeed;
 
 	FCharacterStatInfo()
 		: MaxHP(100.f)
 		, Attack(10.f)
 		, Defense(5.f)
-		, MoveSpeed(600.f)
 	{
 	}
 };

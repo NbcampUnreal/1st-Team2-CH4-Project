@@ -7,29 +7,27 @@
 // Sets default values for this component's properties
 UStatComponent::UStatComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
+void UStatComponent::InitializeStats(const FCharacterStatInfo& NewStats)
+{
+	BaseStats = NewStats;
+	CurrentHP = BaseStats.MaxHP;
+}
 
-// Called when the game starts
+void UStatComponent::ChangeHP(float Delta)
+{
+	CurrentHP = FMath::Clamp(CurrentHP + Delta, 0.0f, BaseStats.MaxHP);
+	if (CurrentHP <= 0.0f)
+	{
+		// HP가 0 이하가 되면 사망 이벤트 발생
+		OnDeath.Broadcast();
+	}
+}
+
 void UStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// ...
-	
+	CurrentHP = BaseStats.MaxHP;
 }
-
-
-// Called every frame
-void UStatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
-}
-

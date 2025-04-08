@@ -86,7 +86,21 @@ public:
 	void ReleaseGuard(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void NormalAttack(const FInputActionValue& Value);
+	void NormalAttack(const FInputActionValue& Value)
+	{
+		int Size = NormalAttackMontages.Num();
+		int PrevIndex = NormalAttackMontageIndex;
+		NormalAttackMontageIndex++;
+		UAnimMontage* NormalAttackMontage = NormalAttackMontages[NormalAttackMontageIndex % Size];
+
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+		if (AnimInstance && NormalAttackMontage && !AnimInstance->Montage_IsPlaying(NormalAttackMontages[PrevIndex % Size]))
+		{
+			AnimInstance->StopAllMontages(1);
+			AnimInstance->Montage_Play(NormalAttackMontage);
+		}
+	}
 	UFUNCTION()
 	virtual void Skill(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Skill, );
 	UFUNCTION()
