@@ -23,7 +23,6 @@ protected:
     UPROPERTY(meta = (BindWidget))
     class UTextBlock* Player;
 
-    // ID별 텍스처 매핑
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character")
     TMap<FString, UTexture2D*> CharacterIconMap;
 };

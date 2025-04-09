@@ -13,6 +13,5 @@ class JOSEON12KNIGHTS_API AGM_SingleMode : public AGM_BaseMode
 public:
 	virtual void BeginPlay() override;
 
-	// ProceedToMatch 오버라이드: 싱글은 OpenLevel
 	virtual void ProceedToMatch() override;
 };

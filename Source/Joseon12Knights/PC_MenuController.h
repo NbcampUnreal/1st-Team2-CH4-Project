@@ -21,20 +21,16 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 	virtual void SetupInputComponent() override;
 
-	// 상태 감지 함수
 	void CheckAndShowUI();
 	void OnPressStart();
 
-	// 한 번만 띄우도록 체크 변수
 	bool bModeUIShown = false;
 	bool bCharacterUIShown = false;
 	bool bPressStartUIShown = false;
 
-	// GameState / GameInstance 캐스팅 헬퍼
 	AGS_FighterState* GetGS() const;
 	UGI_GameCoreInstance* GetGI() const;
 
-	// 위젯 클래스들 (위젯 연결은 블루프린트에서 설정)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UUserWidget> PressStartWidgetClass;
 
@@ -51,9 +47,8 @@ protected:
 	void SelectVS();
 
 	UFUNCTION(BlueprintCallable)
-	void OnCharacterSelectConfirmed(int32 NumAI); // 싱글이면 AI 수 전달, 온라인이면 무시
+	void OnCharacterSelectConfirmed(int32 NumAI);
 
 
-	// 실제 생성된 위젯
 	UUserWidget* CurrentWidget;
 };

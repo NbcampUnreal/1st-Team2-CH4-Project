@@ -13,7 +13,6 @@ class JOSEON12KNIGHTS_API APS_FighterPlayerState : public APlayerState
 public:
 	APS_FighterPlayerState();
 
-	// 로비에서 Ready 상태 여부
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	bool bIsReady = false;
 

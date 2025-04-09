@@ -3,7 +3,6 @@
 
 AGS_FighterState::AGS_FighterState()
 {
-	// Replication È°¼ºÈ­
 	bReplicates = true;
 	MatchPhase = EMatchPhase::Lobby;
 	bShowCharacterSelect = false;

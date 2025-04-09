@@ -22,12 +22,10 @@ void AGM_MatchMode::SpawnCharacters()
 		APlayerController* PC = It->Get();
 		if (!PC) continue;
 
-		// 캐릭터 ID 가져오기 (PlayerState 기준 예시)
 		APS_FighterPlayerState* FighterPS = Cast<APS_FighterPlayerState>(PC->PlayerState);
-		FString CharacterID = FighterPS ? FighterPS->GetPlayerName() : TEXT("DefaultChar"); // 임시 ID
+		FString CharacterID = FighterPS ? FighterPS->GetPlayerName() : TEXT("DefaultChar"); // 占쌈쏙옙 ID
 
-		// 여기서 실제 스폰은 블루프린트나 Spawner로 대체 예정
 		UE_LOG(LogTemp, Log, TEXT("Spawning character for %s (ID: %s)"), *PC->GetName(), *CharacterID);
-		// TODO: SpawnActor<CharacterClass>(...) 등으로 캐릭터 생성
+	
 	}
 }

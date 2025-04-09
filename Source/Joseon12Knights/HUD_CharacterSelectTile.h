@@ -20,7 +20,6 @@ public:
     UFUNCTION(BlueprintCallable)
     void SetupCharacterTile(const FString& InCharacterID);
 
-    // 패널 참조 (패널 설정은 부모 위젯에서 해줌)
     UPROPERTY()
     UHUD_CharacterSelectPanel* Panel1;
 

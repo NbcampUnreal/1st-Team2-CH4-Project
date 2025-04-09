@@ -18,7 +18,7 @@ public:
   
     
 protected:
-    // Å¸ÀÏµé (À§ÂÊ 8Ä­ - ºí·çÇÁ¸°Æ® ÀÌ¸§ °íÁ¤)
+    // Å¸ï¿½Ïµï¿½ (ï¿½ï¿½ï¿½ï¿½ 8Ä­ - ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½)
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_1;
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_2;
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_3;
@@ -28,7 +28,7 @@ protected:
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_7;
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_8;
 
-    // ÆÐ³Îµé (¾Æ·¡ÂÊ 4Ä­)
+    // ï¿½Ð³Îµï¿½ (ï¿½Æ·ï¿½ï¿½ï¿½ 4Ä­)
     
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectPanel* Pannel1;
 
@@ -36,7 +36,6 @@ protected:
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectPanel* Pannel3;
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectPanel* Pannel4;
 
-    // µÚ·Î°¡±â ¹öÆ°
     UPROPERTY(meta = (BindWidget)) UButton* BackButton;
 
     UFUNCTION()

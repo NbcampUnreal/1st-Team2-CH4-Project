@@ -6,7 +6,6 @@ void AGM_SingleMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 싱글 모드는 즉시 캐릭터 셀렉 시작
 	StartCharacterSelect();
 }
 

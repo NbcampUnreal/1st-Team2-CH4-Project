@@ -7,7 +7,6 @@ void UHUD_CharacterSelect::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // 타일에 패널 주입
     TArray<UHUD_CharacterSelectTile*> Tiles = {
         CharacterPannel_1, CharacterPannel_2, CharacterPannel_3, CharacterPannel_4,
         CharacterPannel_5, CharacterPannel_6, CharacterPannel_7, CharacterPannel_8
@@ -30,8 +29,8 @@ void UHUD_CharacterSelect::NativeConstruct()
     if (CharacterPannel_4) CharacterPannel_4->SetupCharacterTile(TEXT("4"));
     if (CharacterPannel_5) CharacterPannel_5->SetupCharacterTile(TEXT("5"));
     if (CharacterPannel_6) CharacterPannel_6->SetupCharacterTile(TEXT("6"));
-    if (CharacterPannel_7) CharacterPannel_7->SetupCharacterTile(TEXT("?"));
-    if (CharacterPannel_8) CharacterPannel_8->SetupCharacterTile(TEXT("!"));
+    if (CharacterPannel_7) CharacterPannel_7->SetupCharacterTile(TEXT("7"));
+    if (CharacterPannel_8) CharacterPannel_8->SetupCharacterTile(TEXT("8"));
 
     if (BackButton)
         BackButton->OnClicked.AddDynamic(this, &UHUD_CharacterSelect::OnBackClicked);

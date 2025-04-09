@@ -17,9 +17,7 @@ protected:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
 
-	// Ready 상태 체크
 	void CheckAllPlayersReady();
 
-	// 클라이언트에서 Ready 요청 시 호출될 함수 (RPC)
 
 };
