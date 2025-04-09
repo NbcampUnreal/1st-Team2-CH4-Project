@@ -44,12 +44,9 @@ void UHUD_CharacterSelect::OnBackClicked()
 
     if (APlayerController* PC = GetOwningPlayer())
     {
-        if (UClass* MainMenuClass = LoadClass<UUserWidget>(nullptr, TEXT("/Game/PlatformFighterKit/Blueprints/Hud/Menus/Main/HUD_MainMenu.HUD_MainMenu_C")))
+        if (APC_MenuController* MenuPC = Cast<APC_MenuController>(PC))
         {
-            if (UUserWidget* MainMenu = CreateWidget<UUserWidget>(PC, MainMenuClass))
-            {
-                MainMenu->AddToViewport();
-            }
+            MenuPC->HandleBackToMainMenu();
         }
     }
 }
@@ -171,6 +168,8 @@ void UHUD_CharacterSelect::ClearCpuCharacterFromPanel(int32 CpuIndex)
         break;
     }
 }
+
+
 
 
 void UHUD_CharacterSelect::ApplyCpuCharacters()

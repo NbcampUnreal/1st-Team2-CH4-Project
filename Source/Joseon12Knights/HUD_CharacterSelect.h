@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "GS_FighterState.h" 
+#include "PC_MenuController.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "HUD_CharacterSelect.generated.h"

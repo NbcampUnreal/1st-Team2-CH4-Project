@@ -155,6 +155,15 @@ void APC_MenuController::HandleBackToMainMenu()
 		CurrentWidget = nullptr;
 	}
 
+	bModeUIShown = false;
+	bCharacterUIShown = false;
+
+	if (AGS_FighterState* GS = GetGS())
+	{
+		GS->bShowCharacterSelect = false; 
+		GS->bShowModeSelectUI = true;      
+	}
+
 	if (ModeSelectWidgetClass)
 	{
 		CurrentWidget = CreateWidget<UUserWidget>(this, ModeSelectWidgetClass);
@@ -171,5 +180,7 @@ void APC_MenuController::HandleBackToMainMenu()
 		}
 	}
 }
+
+
 
 
