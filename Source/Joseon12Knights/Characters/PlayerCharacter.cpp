@@ -174,8 +174,6 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 
 	float Direction = AxisValue < 0 ? 1 : -1;
 	
-	//SetActorRotation(CurrentRotation);
-	//AddActorLocalRotation(CurrentRotation);
 	AddMovementInput(GetActorForwardVector(), AxisValue * MoveSpeed);
 
 	FRotator CurrentRotation = FRotator(0.f, Direction * 90.f, 0.f);
