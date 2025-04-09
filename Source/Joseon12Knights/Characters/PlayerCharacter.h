@@ -19,10 +19,10 @@ public:
 	// Sets default values for this character's properties
 	APlayerCharacter();
 
-
-
 protected:
 	// Called when the game starts or when spawned
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Stat")
+	bool bIsDoubleJump;
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
@@ -65,6 +65,9 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UFUNCTION()
+	void Landed(const FHitResult& Hit);
+
+	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
 	UFUNCTION()
@@ -83,12 +86,25 @@ public:
 	void ReleaseGuard(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void NormalAttack(const FInputActionValue& Value);
+	void NormalAttack(const FInputActionValue& Value)
+	{
+		int Size = NormalAttackMontages.Num();
+		int PrevIndex = NormalAttackMontageIndex;
+		NormalAttackMontageIndex++;
+		UAnimMontage* NormalAttackMontage = NormalAttackMontages[NormalAttackMontageIndex % Size];
+
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+		if (AnimInstance && NormalAttackMontage && !AnimInstance->Montage_IsPlaying(NormalAttackMontages[PrevIndex % Size]))
+		{
+			AnimInstance->StopAllMontages(1);
+			AnimInstance->Montage_Play(NormalAttackMontage);
+		}
+	}
 	UFUNCTION()
 	virtual void Skill(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Skill, );
 	UFUNCTION()
 	virtual void Ultimate(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Ultimate, );
 private:
 	int NormalAttackMontageIndex;
-
 };
