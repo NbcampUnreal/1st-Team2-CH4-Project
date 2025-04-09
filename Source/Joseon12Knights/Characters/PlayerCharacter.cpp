@@ -66,6 +66,9 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 	Capsule->SetCanEverAffectNavigation(false);
 	Capsule->CanCharacterStepUpOn = ECB_No;
 
+	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
+	StatComponent = CreateDefaultSubobject<UStatComponent>(TEXT("StatComponent"));
+
 }
 
 void APlayerCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -78,7 +81,6 @@ void APlayerCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComp, AAc
 	}
 }
 
-// Called when the game starts or when spawned
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -92,14 +94,12 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(APlayerCharacter, bIsDoubleJump);
 }
 
-// Called every frame
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
-// Called to bind functionality to input
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -230,6 +230,14 @@ void APlayerCharacter::MulticastStartJump_Implementation()
 	}
 
 	Jump();
+
+	// 점프 사운드 재생
+	if (JumpSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, JumpSound, GetActorLocation());
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Jump %d"), JumpCurrentCount);
 }
 
 void APlayerCharacter::StopJump(const FInputActionValue& Value)
@@ -264,23 +272,31 @@ void APlayerCharacter::Roll(const FInputActionValue& Value)
 
 void APlayerCharacter::Guard(const FInputActionValue& Value)
 {
-	bool bIsGuard = Value.Get<bool>();
+		bool bIsGuard = Value.Get<bool>();
 
-	UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
+		UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
 
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		// 사운드 재생
+		if (!bIsGuarding && bIsGuard && GuardSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
+		}
 
-	if (AnimInstance && GuardMontage && !AnimInstance->Montage_IsPlaying(GuardMontage))
-	{
-		AnimInstance->StopAllMontages(1);
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-		AnimInstance->Montage_Play(GuardMontage);
-	}
+		if (AnimInstance && GuardMontage && !AnimInstance->Montage_IsPlaying(GuardMontage))
+		{
+			AnimInstance->StopAllMontages(1);
+			AnimInstance->Montage_Play(GuardMontage);
+		}
+
+		bIsGuarding = true;
 }
 
 void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 {
 	bool bIsGuard = Value.Get<bool>();
+	bIsGuarding = false;
 
 	UE_LOG(LogTemp, Warning, TEXT("Release GUARD %d "), bIsGuard);
 
@@ -316,9 +332,32 @@ void APlayerCharacter::MulticastAttack_Implementation()
 		AnimInstance->StopAllMontages(1);
 		AnimInstance->Montage_Play(NormalAttackMontage);
 	}
+
+	// 사운드 재생
+	if (NormalAttackSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, NormalAttackSound, GetActorLocation());
+	}
 }
 
+float APlayerCharacter::CalculateDamage(float BaseDamage, APlayerCharacter* Attacker)
+{
+	float AttackerMultiplier = 1.0f;
+	if (Attacker)
+	{
+		if (UBuffComponent* AttackerBuff = Attacker->FindComponentByClass<UBuffComponent>())
+		{
+			AttackerMultiplier = AttackerBuff->GetAttackMultiplier();
+		}
+	}
 
+	float DefenderMultiplier = 1.0f;
+	if (UBuffComponent* DefenderBuff = FindComponentByClass<UBuffComponent>())
+	{
+		DefenderMultiplier = DefenderBuff->GetDefenseMultiplier();
+	}
 
-
+	// 예시: 공격 배율을 곱하고, 방어 배율로 나누어 최종 데미지를 계산
+	return BaseDamage * AttackerMultiplier / DefenderMultiplier;
+}
 
