@@ -4,8 +4,9 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Net/UnrealNetwork.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/PrimitiveComponent.h"
+#include "Net/UnrealNetwork.h"
 
 
 // Sets default values
@@ -50,12 +51,11 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 
 	WeaponComponent->SetRelativeRotation(FRotator(0.f, 0.f, -180.f));
 
-	
+	WeaponComponent->ComponentTags.Add("Weapon");
 
 	ShieldComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Shield"));
 	ShieldComponent->SetupAttachment(GetMesh(), FName("ShieldSocket"));
 
-	//GetCapsuleComponent()->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 	WeaponComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 	ShieldComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 
@@ -65,15 +65,24 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 	Capsule->SetCollisionObjectType(ECC_Pawn);
 	Capsule->SetCanEverAffectNavigation(false);
 	Capsule->CanCharacterStepUpOn = ECB_No;
+
+}
+
+void APlayerCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor == this) return;
+
+	if (OtherComp && OtherComp->ComponentHasTag("Weapon"))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
+	}
 }
 
 // Called when the game starts or when spawned
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	//WeaponComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName(TEXT("WeaponSocket")));
-	//ShieldComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName(TEXT("ShieldSocket")));
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnCapsuleOverlap);
 }
 
 void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -81,8 +90,6 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(APlayerCharacter, bIsDoubleJump);
-	//DOREPLIFETIME(APlayerCharacter, JumpCount);
-
 }
 
 // Called every frame
