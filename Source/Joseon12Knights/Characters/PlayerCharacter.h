@@ -21,7 +21,7 @@ public:
 
 protected:
 	// Called when the game starts or when spawned
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Stat")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated)
 	bool bIsDoubleJump;
 	virtual void BeginPlay() override;
 
@@ -57,6 +57,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment")
 	UStaticMeshComponent* ShieldComponent;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -72,6 +74,12 @@ public:
 
 	UFUNCTION()
 	void StartJump(const FInputActionValue& Value);
+
+	UFUNCTION(Server, Unreliable)
+	void ServerStartJump();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastStartJump();
 
 	UFUNCTION()
 	void StopJump(const FInputActionValue& Value);

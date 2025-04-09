@@ -4,6 +4,8 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Net/UnrealNetwork.h"
+#include "Components/CapsuleComponent.h"
 
 
 // Sets default values
@@ -15,7 +17,7 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 	MoveSpeed = 50.f;
 	DashDistance = 2000.f;
 	JumpMaxCount = 2;
-	
+
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("/Game/ModularAnimalKnightsPolyart/Meshes/OneMeshCharacter/RabitSK.RabitSK"));
 	///Game/ModularAnimalKnightsPolyart/Meshes/OneMeshCharacter/RabitSK.RabitSK
 
@@ -48,8 +50,21 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 
 	WeaponComponent->SetRelativeRotation(FRotator(0.f, 0.f, -180.f));
 
+	
+
 	ShieldComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Shield"));
 	ShieldComponent->SetupAttachment(GetMesh(), FName("ShieldSocket"));
+
+	//GetCapsuleComponent()->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+	WeaponComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+	ShieldComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+
+	UCapsuleComponent* Capsule = GetCapsuleComponent();
+	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	Capsule->SetCollisionResponseToAllChannels(ECR_Overlap);
+	Capsule->SetCollisionObjectType(ECC_Pawn);
+	Capsule->SetCanEverAffectNavigation(false);
+	Capsule->CanCharacterStepUpOn = ECB_No;
 }
 
 // Called when the game starts or when spawned
@@ -59,6 +74,15 @@ void APlayerCharacter::BeginPlay()
 
 	//WeaponComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName(TEXT("WeaponSocket")));
 	//ShieldComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName(TEXT("ShieldSocket")));
+}
+
+void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(APlayerCharacter, bIsDoubleJump);
+	//DOREPLIFETIME(APlayerCharacter, JumpCount);
+
 }
 
 // Called every frame
@@ -173,7 +197,7 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 	float AxisValue = Value.Get<float>();
 
 	float Direction = AxisValue < 0 ? 1 : -1;
-	
+
 	AddMovementInput(GetActorForwardVector(), AxisValue * MoveSpeed);
 
 	FRotator CurrentRotation = FRotator(0.f, Direction * 90.f, 0.f);
@@ -182,15 +206,23 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 
 void APlayerCharacter::StartJump(const FInputActionValue& Value)
 {
+	ServerStartJump();
+}
+
+void APlayerCharacter::ServerStartJump_Implementation()
+{
+	MulticastStartJump();
+}
+
+void APlayerCharacter::MulticastStartJump_Implementation()
+{
+	//JumpCount++;
 	if (JumpCurrentCount == 1)
 	{
 		bIsDoubleJump = true;
-		UE_LOG(LogTemp, Warning, TEXT("Double Jump"));
 	}
 
 	Jump();
-
-	UE_LOG(LogTemp, Warning, TEXT("Jump %d"), JumpCurrentCount);
 }
 
 void APlayerCharacter::StopJump(const FInputActionValue& Value)
