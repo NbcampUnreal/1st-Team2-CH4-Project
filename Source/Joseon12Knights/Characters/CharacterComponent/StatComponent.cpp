@@ -1,13 +1,15 @@
-﻿// 
-
-
-#include "StatComponent.h"
-
+﻿#include "StatComponent.h"
 
 // Sets default values for this component's properties
 UStatComponent::UStatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UStatComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	CurrentHP = BaseStats.MaxHP;
 }
 
 void UStatComponent::InitializeStats(const FCharacterStatInfo& NewStats)
@@ -26,8 +28,4 @@ void UStatComponent::ChangeHP(float Delta)
 	}
 }
 
-void UStatComponent::BeginPlay()
-{
-	Super::BeginPlay();
-	CurrentHP = BaseStats.MaxHP;
-}
+
