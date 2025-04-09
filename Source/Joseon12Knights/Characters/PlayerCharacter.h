@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "CharacterComponent/BuffComponent.h"
+#include "CharacterComponent/StatComponent.h"
 #include "PlayerCharacter.generated.h"
 
 struct FInputActionValue;
@@ -57,6 +59,13 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment")
 	UStaticMeshComponent* ShieldComponent;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
+	UBuffComponent* BuffComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
+	UStatComponent* StatComponent;
+
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -101,6 +110,11 @@ public:
 			AnimInstance->Montage_Play(NormalAttackMontage);
 		}
 	}
+
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	float CalculateDamage(float BaseDamage, APlayerCharacter* Attacker);
+
+
 	UFUNCTION()
 	virtual void Skill(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Skill, );
 	UFUNCTION()

@@ -1,6 +1,4 @@
-﻿// 
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
@@ -49,8 +47,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Stat")
 	void ChangeHP(float Delta);
 
-	// 사망 처리 등 이벤트가 필요하면 Delegate 사용 가능
+	// 사망 처리 Delegate
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeath);
+
 	UPROPERTY(BlueprintAssignable, Category="Stat")
 	FOnDeath OnDeath;
 

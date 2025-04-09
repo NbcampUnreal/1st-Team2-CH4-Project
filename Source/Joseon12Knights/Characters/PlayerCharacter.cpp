@@ -49,9 +49,11 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 
 	ShieldComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Shield"));
 	ShieldComponent->SetupAttachment(GetMesh(), FName("ShieldSocket"));
+
+	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
+	StatComponent = CreateDefaultSubobject<UStatComponent>(TEXT("StatComponent"));
 }
 
-// Called when the game starts or when spawned
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -60,14 +62,12 @@ void APlayerCharacter::BeginPlay()
 	//ShieldComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName(TEXT("ShieldSocket")));
 }
 
-// Called every frame
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
-// Called to bind functionality to input
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -250,3 +250,23 @@ void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 	}
 }
 
+float APlayerCharacter::CalculateDamage(float BaseDamage, APlayerCharacter* Attacker)
+{
+	float AttackerMultiplier = 1.0f;
+	if (Attacker)
+	{
+		if (UBuffComponent* AttackerBuff = Attacker->FindComponentByClass<UBuffComponent>())
+		{
+			AttackerMultiplier = AttackerBuff->GetAttackMultiplier();
+		}
+	}
+
+	float DefenderMultiplier = 1.0f;
+	if (UBuffComponent* DefenderBuff = FindComponentByClass<UBuffComponent>())
+	{
+		DefenderMultiplier = DefenderBuff->GetDefenseMultiplier();
+	}
+
+	// 예시: 공격 배율을 곱하고, 방어 배율로 나누어 최종 데미지를 계산
+	return BaseDamage * AttackerMultiplier / DefenderMultiplier;
+}
