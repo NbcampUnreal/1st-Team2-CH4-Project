@@ -187,6 +187,12 @@ void APlayerCharacter::StartJump(const FInputActionValue& Value)
 
 	Jump();
 
+	// 점프 사운드 재생
+	if (JumpSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, JumpSound, GetActorLocation());
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("Jump %d"), JumpCurrentCount);
 }
 
@@ -233,6 +239,12 @@ void APlayerCharacter::Guard(const FInputActionValue& Value)
 		AnimInstance->StopAllMontages(1);
 
 		AnimInstance->Montage_Play(GuardMontage);
+	}
+
+	// 사운드 재생
+	if (GuardSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
 	}
 }
 

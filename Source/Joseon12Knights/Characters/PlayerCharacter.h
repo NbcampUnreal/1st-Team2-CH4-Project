@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "CharacterComponent/BuffComponent.h"
 #include "CharacterComponent/StatComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "PlayerCharacter.generated.h"
 
 struct FInputActionValue;
@@ -50,6 +51,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 	UCameraComponent* Camera;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 	USpringArmComponent* SpringArm;
 
@@ -58,6 +60,15 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment")
 	UStaticMeshComponent* ShieldComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* NormalAttackSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* GuardSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+	USoundBase* JumpSound;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
 	UBuffComponent* BuffComponent;
@@ -108,6 +119,12 @@ public:
 		{
 			AnimInstance->StopAllMontages(1);
 			AnimInstance->Montage_Play(NormalAttackMontage);
+		}
+
+		// 사운드 재생
+		if (NormalAttackSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, NormalAttackSound, GetActorLocation());
 		}
 	}
 
