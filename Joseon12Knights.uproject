@@ -1,0 +1,16 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "{173C2CE2-4719-F2AC-95C3-53B7D3C03C39}",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "Joseon12Knights",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		}
+	]
+}
