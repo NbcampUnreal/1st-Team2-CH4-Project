@@ -51,7 +51,7 @@ void UHUD_CharacterSelectTile::HandleClicked()
     if (CharacterID == "5" || CharacterID == "6" || CharacterID == "7" || CharacterID == "8")
     {
         // 잠금 캐릭터: 흔들기만 실행하고 리턴
-        StartShake();
+        PlayShakeAnimation();
         return;
     }
 
@@ -127,26 +127,10 @@ void UHUD_CharacterSelectTile::UpdateSelectionIndicators(const TMap<FString, TAr
     }
 }
 
-
-void UHUD_CharacterSelectTile::StartShake()
+void UHUD_CharacterSelectTile::PlayShakeAnimation()
 {
-    ShakeStep = 0;
-    GetWorld()->GetTimerManager().SetTimer(ShakeTimerHandle, this, &UHUD_CharacterSelectTile::TickShake, 0.02f, true);
-}
-
-void UHUD_CharacterSelectTile::TickShake()
-{
-    static const TArray<float> Offsets = { 0.f, -5.f, 5.f, -5.f, 0.f };
-
-    if (ShakeStep < Offsets.Num())
+    if (ShakeAnim)
     {
-        FVector2D NewOffset(Offsets[ShakeStep], 0.f);
-        SetRenderTranslation(NewOffset);
-        ShakeStep++;
-    }
-    else
-    {
-        GetWorld()->GetTimerManager().ClearTimer(ShakeTimerHandle);
-        SetRenderTranslation(FVector2D::ZeroVector);
+        PlayAnimation(ShakeAnim, 0.f, 1); 
     }
 }

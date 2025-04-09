@@ -34,6 +34,9 @@ public:
     UPROPERTY()
     UHUD_CharacterSelectPanel* Panel4;
 
+    UPROPERTY(meta = (BindWidgetAnim), Transient)
+    UWidgetAnimation* ShakeAnim;
+
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character")
     UTexture2D* PortraitTexture;
@@ -57,12 +60,7 @@ protected:
     UPROPERTY(meta = (BindWidget)) UImage* BorderP4;
 
 
-    FTimerHandle ShakeTimerHandle;
-    int32 ShakeStep = 0;
-
-    void StartShake();
-    void TickShake();
-
+    void PlayShakeAnimation();
 
     UFUNCTION()
     void HandleClicked();
