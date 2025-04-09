@@ -130,12 +130,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	float CalculateDamage(float BaseDamage, APlayerCharacter* Attacker);
-
-
 	UFUNCTION()
 	virtual void Skill(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Skill, );
 	UFUNCTION()
 	virtual void Ultimate(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Ultimate, );
+protected:
+	bool bIsGuarding;
+
 private:
 	int NormalAttackMontageIndex;
 };
