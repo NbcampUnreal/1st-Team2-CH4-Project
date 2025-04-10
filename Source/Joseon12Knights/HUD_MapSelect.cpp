@@ -7,6 +7,16 @@ void UHUD_MapSelect::NativeConstruct()
 {
     Super::NativeConstruct();
 
+    if (APlayerController* PC = GetOwningPlayer())
+    {
+        FInputModeUIOnly InputMode;
+        InputMode.SetWidgetToFocus(TakeWidget());
+        InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+        PC->SetInputMode(InputMode);
+        PC->bShowMouseCursor = true;
+    }
+
+
     if (Tile3)
     {
         TArray<TSoftObjectPtr<UWorld>> Options;
@@ -60,15 +70,21 @@ void UHUD_MapSelect::ConfirmSelection()
 {
     if (!SelectedTile)
     {
+        UE_LOG(LogTemp, Warning, TEXT("❌ ConfirmSelection: SelectedTile is nullptr"));
         return;
     }
 
     if (!SelectedTile->LevelToLoad.IsValid())
     {
+        UE_LOG(LogTemp, Warning, TEXT("❌ ConfirmSelection: LevelToLoad is invalid"));
         return;
     }
 
+    FString MapPath = SelectedTile->LevelToLoad.ToSoftObjectPath().GetAssetPathString();
+    UE_LOG(LogTemp, Warning, TEXT("✅ ConfirmSelection: Opening map %s"), *MapPath);
+
     UGameplayStatics::OpenLevel(this, FName(*SelectedTile->LevelToLoad.ToSoftObjectPath().GetAssetName()));
 }
+
 
 

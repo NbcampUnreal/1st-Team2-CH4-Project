@@ -25,6 +25,34 @@ void APC_MenuController::Tick(float DeltaSeconds)
 	CheckAndShowUI();
 }
 
+//void APC_MenuController::CheckAndShowUI()
+//{
+//	AGS_FighterState* GS = GetGS();
+//	if (!GS) return;
+//
+//	if (!bModeUIShown && GS->bShowModeSelectUI)
+//	{
+//		if (ModeSelectWidgetClass)
+//		{
+//			if (CurrentWidget) CurrentWidget->RemoveFromParent();
+//			CurrentWidget = CreateWidget<UUserWidget>(this, ModeSelectWidgetClass);
+//			if (CurrentWidget) CurrentWidget->AddToViewport();
+//			bModeUIShown = true;
+//		}
+//	}
+//
+//	else if (GS->bShowCharacterSelect && !bCharacterUIShown) 
+//	{
+//		if (CharacterSelectWidgetClass)
+//		{
+//			if (CurrentWidget) CurrentWidget->RemoveFromParent();
+//			CurrentWidget = CreateWidget<UUserWidget>(this, CharacterSelectWidgetClass);
+//			if (CurrentWidget) CurrentWidget->AddToViewport();
+//			bCharacterUIShown = true; 
+//		}
+//	}
+//}
+
 void APC_MenuController::CheckAndShowUI()
 {
 	AGS_FighterState* GS = GetGS();
@@ -32,6 +60,14 @@ void APC_MenuController::CheckAndShowUI()
 
 	if (!bModeUIShown && GS->bShowModeSelectUI)
 	{
+		// 현재 떠 있는 위젯이 MapSelect라면 메인 메뉴 UI 띄우지 말기
+		if (CurrentWidget && CurrentWidget->IsA(UHUD_MapSelect::StaticClass()))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("MapSelect가 이미 떠 있으므로 메인 메뉴 UI 생략"));
+			return;
+		}
+
+		// 메인 메뉴 UI 띄움
 		if (ModeSelectWidgetClass)
 		{
 			if (CurrentWidget) CurrentWidget->RemoveFromParent();
@@ -41,18 +77,17 @@ void APC_MenuController::CheckAndShowUI()
 		}
 	}
 
-	else if (GS->bShowCharacterSelect && !bCharacterUIShown) 
+	else if (GS->bShowCharacterSelect && !bCharacterUIShown)
 	{
 		if (CharacterSelectWidgetClass)
 		{
 			if (CurrentWidget) CurrentWidget->RemoveFromParent();
 			CurrentWidget = CreateWidget<UUserWidget>(this, CharacterSelectWidgetClass);
 			if (CurrentWidget) CurrentWidget->AddToViewport();
-			bCharacterUIShown = true; 
+			bCharacterUIShown = true;
 		}
 	}
 }
-
 
 
 AGS_FighterState* APC_MenuController::GetGS() const
@@ -116,44 +151,55 @@ void APC_MenuController::OnConfirmPressed()
 {
 	if (UGI_GameCoreInstance* GI = GetGI())
 	{
+		// 싱글 모드 && 캐릭터 선택 완료 상태일 때만 맵 셀렉트 진입
 		if (GI->SelectedPlayMode == EPlayMode::Single && !GI->SelectedCharacterID.IsEmpty())
 		{
-			UE_LOG(LogTemp, Log, TEXT("Enter pressed - Character selected, showing map select"));
+			UE_LOG(LogTemp, Log, TEXT("🎮 Enter pressed - Character selected, showing Map Select"));
 
+			// 기존 위젯 제거
 			if (CurrentWidget)
 			{
 				CurrentWidget->RemoveFromParent();
+				CurrentWidget = nullptr;
 			}
 
+			// ✅ GameState UI 상태 초기화 (꼬임 방지)
+			if (AGS_FighterState* GS = GetGS())
+			{
+				GS->bShowModeSelectUI = false;
+				GS->bShowCharacterSelect = false;
+			}
+
+			// ✅ 맵 셀렉트 UI 생성
 			if (MapSelectWidgetClass)
 			{
-				// UI 상태 꼬임 방지
-				if (AGS_FighterState* GS = GetGS())
-				{
-					GS->bShowCharacterSelect = false;
-					GS->bShowModeSelectUI = false;
-				}
-
 				CurrentWidget = CreateWidget<UUserWidget>(this, MapSelectWidgetClass);
 				if (CurrentWidget)
 				{
 					CurrentWidget->AddToViewport();
 
-					FInputModeGameAndUI InputMode;
+					// ✅ UI 포커스 고정 (허공 클릭 방지용)
+					FInputModeUIOnly InputMode;
 					InputMode.SetWidgetToFocus(CurrentWidget->TakeWidget());
 					InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-					InputMode.SetHideCursorDuringCapture(false);
 					SetInputMode(InputMode);
 					bShowMouseCursor = true;
+
+					UE_LOG(LogTemp, Log, TEXT("✅ MapSelect UI opened and input mode locked"));
 				}
 
-				bCharacterUIShown = false; 
+				// ✅ UI 상태 기록
+				bCharacterUIShown = false;
 				bModeUIShown = false;
 			}
-
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("❌ Enter ignored - character not selected or not in single mode"));
 		}
 	}
 }
+
 
 void APC_MenuController::SelectVS()
 {
