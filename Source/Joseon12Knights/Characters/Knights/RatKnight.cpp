@@ -287,6 +287,12 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 		AnimInstance->Montage_Play(UltimateMontage);
 	}
 
+	// R키 입력 시 캐릭터를 살짝 공중으로 띄우기
+	const float UltimateLaunchForce = 500.0f; // 상승력(?)
+	const FVector LauchVelocity(0.0f, 0.0f, UltimateLaunchForce);
+	LaunchCharacter(LauchVelocity, false, true); // bXYOverride = false (XY 속도 유지), bZOverride = true (Z축 속도 강제 적용)
+
+
 	// 타격한 상대에게 독 디버프 적용 (초당 공격력 5% 추가 피해, 4초 지속)
 	APlayerCharacter* Target = GetTargetPlayer();
 	if (Target) 
