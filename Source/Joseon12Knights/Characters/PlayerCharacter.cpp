@@ -228,29 +228,31 @@ void APlayerCharacter::Roll(const FInputActionValue& Value)
 
 void APlayerCharacter::Guard(const FInputActionValue& Value)
 {
-	bool bIsGuard = Value.Get<bool>();
+		bool bIsGuard = Value.Get<bool>();
 
-	UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
+		UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
 
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		// 사운드 재생
+		if (!bIsGuarding && bIsGuard && GuardSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
+		}
 
-	if (AnimInstance && GuardMontage && !AnimInstance->Montage_IsPlaying(GuardMontage))
-	{
-		AnimInstance->StopAllMontages(1);
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-		AnimInstance->Montage_Play(GuardMontage);
-	}
+		if (AnimInstance && GuardMontage && !AnimInstance->Montage_IsPlaying(GuardMontage))
+		{
+			AnimInstance->StopAllMontages(1);
+			AnimInstance->Montage_Play(GuardMontage);
+		}
 
-	// 사운드 재생
-	if (GuardSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
-	}
+		bIsGuarding = true;
 }
 
 void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 {
 	bool bIsGuard = Value.Get<bool>();
+	bIsGuarding = false;
 
 	UE_LOG(LogTemp, Warning, TEXT("Release GUARD %d "), bIsGuard);
 
