@@ -36,6 +36,30 @@ void UHUD_CharacterSelect::NativeConstruct()
 
     if (BackButton)
         BackButton->OnClicked.AddDynamic(this, &UHUD_CharacterSelect::OnBackClicked);
+
+    if (UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance()))
+    {
+        FString CharID = GI->SelectedCharacterID;
+        if (!CharID.IsEmpty())
+        {
+            NotifyCharacterSelected(CharID, 0);
+
+            if (Pannel1)
+            {
+                Pannel1->SetCharacter(CharID, TEXT("1"));
+            }
+        }
+
+        CpuCount = GI->SelectedCpuCount;
+        UpdateCpuText();
+
+        for (int32 i = 1; i <= GI->CpuCharacterIDs.Num(); ++i)
+        {
+            FString SavedID = GI->CpuCharacterIDs[i - 1];
+            ApplyCpuCharacterToPanel(i, SavedID);
+        }
+
+    }
 }
 
 void UHUD_CharacterSelect::OnBackClicked()
@@ -69,7 +93,6 @@ void UHUD_CharacterSelect::NotifyCharacterSelected(const FString& CharacterID, i
     }
 }
 
-
 void UHUD_CharacterSelect::OnCpuUp()
 {
     RecalculateMaxCpu();
@@ -81,8 +104,15 @@ void UHUD_CharacterSelect::OnCpuUp()
 
         FString RandomID = GetAvailableRandomID();
         ApplyCpuCharacterToPanel(CpuCount, RandomID);
+
+        if (UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance()))
+        {
+            GI->CpuCharacterIDs.Add(RandomID);
+            GI->SelectedCpuCount = CpuCount;
+        }
     }
 }
+
 
 void UHUD_CharacterSelect::OnCpuDown()
 {
@@ -91,8 +121,19 @@ void UHUD_CharacterSelect::OnCpuDown()
         ClearCpuCharacterFromPanel(CpuCount);
         CpuCount--;
         UpdateCpuText();
+
+        if (UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance()))
+        {
+            if (GI->CpuCharacterIDs.Num() >= CpuCount)
+            {
+                GI->CpuCharacterIDs.RemoveAt(GI->CpuCharacterIDs.Num() - 1);
+            }
+
+            GI->SelectedCpuCount = CpuCount;
+        }
     }
 }
+
 
 void UHUD_CharacterSelect::RecalculateMaxCpu()
 {

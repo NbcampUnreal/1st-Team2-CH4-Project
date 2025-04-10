@@ -15,7 +15,16 @@ class JOSEON12KNIGHTS_API APC_MenuController : public APlayerController
 	GENERATED_BODY()
 
 public:
+
+	UFUNCTION(BlueprintCallable)
+	void HandleBackToCharacterSelect();
+
+	UFUNCTION(BlueprintCallable)
 	void HandleBackToMainMenu();
+
+	UFUNCTION(BlueprintCallable)
+	void SelectCharacter(const FString& CharacterID);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -23,6 +32,8 @@ protected:
 
 	void CheckAndShowUI();
 	void OnPressStart();
+	UFUNCTION()
+	void OnConfirmPressed();
 
 	bool bModeUIShown = false;
 	bool bCharacterUIShown = false;
@@ -40,8 +51,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UUserWidget> CharacterSelectWidgetClass;
 
-	UFUNCTION(BlueprintCallable)
-	void SelectCharacter(const FString& CharacterID);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UUserWidget> MapSelectWidgetClass;
 
 	UFUNCTION(BlueprintCallable)
 	void SelectVS();

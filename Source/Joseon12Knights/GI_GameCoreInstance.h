@@ -44,6 +44,13 @@ public:
 	FString SelectedCharacterID;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int32 SelectedCpuCount = 0;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TArray<FString> CpuCharacterIDs;
+
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FString SelectedMapName;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)

@@ -54,7 +54,6 @@ void UHUD_CharacterSelectTile::HandleClicked()
         return;
     }
 
-
     // 한글 이름 추출
     FString FinalCharacterName = CharacterNameMap.Contains(CharacterID)
         ? CharacterNameMap[CharacterID]
@@ -84,8 +83,18 @@ void UHUD_CharacterSelectTile::HandleClicked()
         if (UHUD_CharacterSelect* ParentHUD = GetTypedOuter<UHUD_CharacterSelect>())
         {
             ParentHUD->NotifyCharacterSelected(CharacterID, ControllerId);
+
+            // 여기 추가: 선택된 캐릭터 ID를 GameInstance에 전달
+            if (APlayerController* PC = GetOwningPlayer())
+            {
+                if (APC_MenuController* MenuPC = Cast<APC_MenuController>(PC))
+                {
+                    MenuPC->SelectCharacter(CharacterID);
+                }
+            }
         }
 }
+
 
 
 

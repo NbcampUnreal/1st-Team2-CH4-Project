@@ -72,7 +72,7 @@ void APC_MenuController::SetupInputComponent()
 	if (InputComponent)
 	{
 		InputComponent->BindAction("Start", IE_Pressed, this, &APC_MenuController::OnPressStart);
-		
+		InputComponent->BindAction("Confirm", IE_Pressed, this, &APC_MenuController::OnConfirmPressed);
 	}
 }
 
@@ -96,13 +96,45 @@ void APC_MenuController::OnPressStart()
 	}
 }
 
-void APC_MenuController::SelectVS()
+void APC_MenuController::OnConfirmPressed()
 {
-	if (AGS_FighterState* GS = GetGS())
+	if (UGI_GameCoreInstance* GI = GetGI())
 	{
-		GS->bShowCharacterSelect = true;
+		if (GI->SelectedPlayMode == EPlayMode::Single && !GI->SelectedCharacterID.IsEmpty())
+		{
+			UE_LOG(LogTemp, Log, TEXT("Enter pressed - Character selected, showing map select"));
+
+			if (CurrentWidget)
+			{
+				CurrentWidget->RemoveFromParent();
+			}
+
+			if (MapSelectWidgetClass)
+			{
+				CurrentWidget = CreateWidget<UUserWidget>(this, MapSelectWidgetClass);
+				if (CurrentWidget)
+				{
+					CurrentWidget->AddToViewport();
+				}
+			}
+		}
 	}
 }
+
+void APC_MenuController::SelectVS()
+{
+	if (UGI_GameCoreInstance* GI = GetGI())
+	{
+		GI->SelectedPlayMode = EPlayMode::Single; 
+		GI->bIsHost = true; 
+	}
+
+	if (AGS_FighterState* GS = GetGS())
+	{
+		GS->bShowCharacterSelect = true; 
+	}
+}
+
 
 void APC_MenuController::OnCharacterSelectConfirmed(int32 NumAI)
 {
@@ -147,6 +179,34 @@ void APC_MenuController::OnCharacterSelectConfirmed(int32 NumAI)
 	}
 }
 
+void APC_MenuController::HandleBackToCharacterSelect()
+{
+	if (CurrentWidget)
+	{
+		CurrentWidget->RemoveFromParent();
+		CurrentWidget = nullptr;
+	}
+
+	if (CharacterSelectWidgetClass)
+	{
+		CurrentWidget = CreateWidget<UUserWidget>(this, CharacterSelectWidgetClass);
+		if (CurrentWidget)
+		{
+			CurrentWidget->AddToViewport();
+
+			FInputModeGameAndUI InputMode;
+			InputMode.SetWidgetToFocus(CurrentWidget->TakeWidget());
+			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			InputMode.SetHideCursorDuringCapture(false);
+			SetInputMode(InputMode);
+			bShowMouseCursor = true;
+		}
+	}
+
+	bCharacterUIShown = true;
+	bModeUIShown = false;
+}
+
 void APC_MenuController::HandleBackToMainMenu()
 {
 	if (CurrentWidget)
@@ -160,8 +220,8 @@ void APC_MenuController::HandleBackToMainMenu()
 
 	if (AGS_FighterState* GS = GetGS())
 	{
-		GS->bShowCharacterSelect = false; 
-		GS->bShowModeSelectUI = true;      
+		GS->bShowCharacterSelect = false;
+		GS->bShowModeSelectUI = true; 
 	}
 
 	if (ModeSelectWidgetClass)
