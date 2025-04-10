@@ -31,6 +31,13 @@ protected:
 		bool bFromSweep,
 		const FHitResult& SweepResult);
 
+	virtual float TakeDamage(
+		float DamageAmount,
+		struct FDamageEvent const& DamageEvent,
+		class AController* EventInstigator,
+		AActor* DamageCauser
+	) override;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated)
 	bool bIsDoubleJump;
 	virtual void BeginPlay() override;

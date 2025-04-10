@@ -7,6 +7,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
 
 
 // Sets default values
@@ -60,10 +61,15 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 	ShieldComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 
 	UCapsuleComponent* Capsule = GetCapsuleComponent();
+	
 	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	Capsule->SetCollisionResponseToAllChannels(ECR_Overlap);
-	Capsule->SetCollisionObjectType(ECC_Pawn);
-	Capsule->SetCanEverAffectNavigation(false);
+	Capsule->SetCollisionObjectType(ECC_Pawn); 
+	Capsule->SetCollisionResponseToAllChannels(ECR_Ignore);
+	Capsule->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
+	Capsule->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+	Capsule->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
+	Capsule->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	Capsule->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Overlap);
 	Capsule->CanCharacterStepUpOn = ECB_No;
 
 	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
@@ -79,6 +85,16 @@ void APlayerCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComp, AAc
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
 	}
+}
+
+float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	float KnockBackDistance = bIsGuarding ? 500.f : 1000.f;
+
+	FVector Direction = GetMesh()->GetRightVector() * DashDistance;
+	LaunchCharacter(Direction, true, false);
+
+	return 0.0f;
 }
 
 void APlayerCharacter::BeginPlay()
