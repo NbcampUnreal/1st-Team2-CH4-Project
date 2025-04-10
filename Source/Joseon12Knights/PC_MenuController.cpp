@@ -73,6 +73,8 @@ void APC_MenuController::SetupInputComponent()
 	{
 		InputComponent->BindAction("Start", IE_Pressed, this, &APC_MenuController::OnPressStart);
 		InputComponent->BindAction("Confirm", IE_Pressed, this, &APC_MenuController::OnConfirmPressed);
+		InputComponent->BindAction("GameStart", IE_Pressed, this, &APC_MenuController::OnConfirmPressed);
+
 	}
 }
 
@@ -96,6 +98,20 @@ void APC_MenuController::OnPressStart()
 	}
 }
 
+void APC_MenuController::OnGameStartPressed()
+{
+	if (CurrentWidget)
+	{
+		if (UHUD_MapSelect* MapSelectUI = Cast<UHUD_MapSelect>(CurrentWidget))
+		{
+			MapSelectUI->ConfirmSelection(); 
+		}
+	}
+
+
+}
+
+
 void APC_MenuController::OnConfirmPressed()
 {
 	if (UGI_GameCoreInstance* GI = GetGI())
@@ -111,12 +127,30 @@ void APC_MenuController::OnConfirmPressed()
 
 			if (MapSelectWidgetClass)
 			{
+				// UI 상태 꼬임 방지
+				if (AGS_FighterState* GS = GetGS())
+				{
+					GS->bShowCharacterSelect = false;
+					GS->bShowModeSelectUI = false;
+				}
+
 				CurrentWidget = CreateWidget<UUserWidget>(this, MapSelectWidgetClass);
 				if (CurrentWidget)
 				{
 					CurrentWidget->AddToViewport();
+
+					FInputModeGameAndUI InputMode;
+					InputMode.SetWidgetToFocus(CurrentWidget->TakeWidget());
+					InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+					InputMode.SetHideCursorDuringCapture(false);
+					SetInputMode(InputMode);
+					bShowMouseCursor = true;
 				}
+
+				bCharacterUIShown = false; 
+				bModeUIShown = false;
 			}
+
 		}
 	}
 }
@@ -187,6 +221,11 @@ void APC_MenuController::HandleBackToCharacterSelect()
 		CurrentWidget = nullptr;
 	}
 
+	if (UGI_GameCoreInstance* GI = GetGI())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("🧠 CPU 저장된 개수: %d"), GI->CpuCharacterIDs.Num());
+	}
+
 	if (CharacterSelectWidgetClass)
 	{
 		CurrentWidget = CreateWidget<UUserWidget>(this, CharacterSelectWidgetClass);
@@ -215,13 +254,20 @@ void APC_MenuController::HandleBackToMainMenu()
 		CurrentWidget = nullptr;
 	}
 
+	if (UGI_GameCoreInstance* GI = GetGI())
+	{
+		GI->SelectedCharacterID = TEXT("");
+		GI->SelectedCpuCount = 0;
+		GI->CpuCharacterIDs.Empty();
+	}
+
 	bModeUIShown = false;
 	bCharacterUIShown = false;
 
 	if (AGS_FighterState* GS = GetGS())
 	{
 		GS->bShowCharacterSelect = false;
-		GS->bShowModeSelectUI = true; 
+		GS->bShowModeSelectUI = true;
 	}
 
 	if (ModeSelectWidgetClass)

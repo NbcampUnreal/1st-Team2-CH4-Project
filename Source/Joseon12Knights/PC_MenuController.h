@@ -6,6 +6,7 @@
 #include "GS_FighterState.h"
 #include "GM_SingleMode.h"
 #include "GM_LobbyMode.h"
+#include "HUD_MapSelect.h"
 #include "GI_GameCoreInstance.h"
 #include "PC_MenuController.generated.h"
 
@@ -25,6 +26,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SelectCharacter(const FString& CharacterID);
 
+	AGS_FighterState* GetGS() const;
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
@@ -32,14 +35,18 @@ protected:
 
 	void CheckAndShowUI();
 	void OnPressStart();
+
 	UFUNCTION()
 	void OnConfirmPressed();
+
+	UFUNCTION()
+	void OnGameStartPressed();
 
 	bool bModeUIShown = false;
 	bool bCharacterUIShown = false;
 	bool bPressStartUIShown = false;
 
-	AGS_FighterState* GetGS() const;
+
 	UGI_GameCoreInstance* GetGI() const;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")

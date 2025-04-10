@@ -9,6 +9,8 @@ void UHUD_CharacterSelect::NativeConstruct()
 {
     Super::NativeConstruct();
 
+    bPressStartPlayed = false; 
+
     Tiles = {
         CharacterPannel_1, CharacterPannel_2, CharacterPannel_3, CharacterPannel_4,
         CharacterPannel_5, CharacterPannel_6, CharacterPannel_7, CharacterPannel_8
@@ -44,21 +46,39 @@ void UHUD_CharacterSelect::NativeConstruct()
         {
             NotifyCharacterSelected(CharID, 0);
 
+            FString DisplayName = CharID;
+            static TMap<FString, FString> NameMap = {
+                {TEXT("1"), TEXT("자 기사")},
+                {TEXT("2"), TEXT("축 기사")},
+                {TEXT("3"), TEXT("인 기사")},
+                {TEXT("4"), TEXT("진 기사")}
+            };
+            if (NameMap.Contains(CharID))
+            {
+                DisplayName = NameMap[CharID];
+            }
+
             if (Pannel1)
             {
-                Pannel1->SetCharacter(CharID, TEXT("1"));
+                Pannel1->SetCharacter(DisplayName, TEXT("1"));
             }
         }
 
-        CpuCount = GI->SelectedCpuCount;
+        CpuCount = GI->CpuCharacterIDs.Num();
         UpdateCpuText();
 
-        for (int32 i = 1; i <= GI->CpuCharacterIDs.Num(); ++i)
+        for (int32 i = 1; i <= CpuCount; ++i)
         {
             FString SavedID = GI->CpuCharacterIDs[i - 1];
             ApplyCpuCharacterToPanel(i, SavedID);
         }
 
+        if (!bPressStartPlayed && !CharID.IsEmpty() && CpuCount >= 1 && PressStartAnim)
+        {
+            UE_LOG(LogTemp, Warning, TEXT("복구 시 조건 만족 → PressStart 애니메이션 재생"));
+            PlayAnimation(PressStartAnim, 0.f, 1);
+            bPressStartPlayed = true;
+        }
     }
 }
 
@@ -91,7 +111,23 @@ void UHUD_CharacterSelect::NotifyCharacterSelected(const FString& CharacterID, i
             Tile->UpdateSelectionIndicators(CharacterSelections);
         }
     }
+
+    int32 LocalPlayerIndex = 0;
+    if (APlayerController* PC = GetOwningPlayer())
+    {
+        if (ULocalPlayer* LP = PC->GetLocalPlayer())
+        {
+            LocalPlayerIndex = LP->GetControllerId(); 
+        }
+    }
+
+    if (!bPressStartPlayed && CpuCount >= 1 && PressStartAnim && PlayerIndex == LocalPlayerIndex)
+    {
+        PlayAnimation(PressStartAnim, 0.f, 1);
+        bPressStartPlayed = true;
+    }
 }
+
 
 void UHUD_CharacterSelect::OnCpuUp()
 {
@@ -110,8 +146,31 @@ void UHUD_CharacterSelect::OnCpuUp()
             GI->CpuCharacterIDs.Add(RandomID);
             GI->SelectedCpuCount = CpuCount;
         }
+
+        int32 LocalPlayerIndex = 0;
+        if (APlayerController* PC = GetOwningPlayer())
+        {
+            if (ULocalPlayer* LP = PC->GetLocalPlayer())
+            {
+                LocalPlayerIndex = LP->GetControllerId();
+            }
+        }
+
+        if (!bPressStartPlayed && PressStartAnim)
+        {
+            for (const auto& Pair : CharacterSelections)
+            {
+                if (Pair.Value.Contains(LocalPlayerIndex))
+                {
+                    PlayAnimation(PressStartAnim, 0.f, 1);
+                    bPressStartPlayed = true;
+                    break;
+                }
+            }
+        }
     }
 }
+
 
 
 void UHUD_CharacterSelect::OnCpuDown()
@@ -124,13 +183,30 @@ void UHUD_CharacterSelect::OnCpuDown()
 
         if (UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance()))
         {
-            if (GI->CpuCharacterIDs.Num() >= CpuCount)
+            if (GI->CpuCharacterIDs.IsValidIndex(CpuCount - 1))
             {
-                GI->CpuCharacterIDs.RemoveAt(GI->CpuCharacterIDs.Num() - 1);
+                GI->CpuCharacterIDs.RemoveAt(CpuCount - 1);
             }
 
             GI->SelectedCpuCount = CpuCount;
         }
+
+        if (CpuCount == 0)
+        {
+            bPressStartPlayed = false;
+
+            if (PressStartAnim)
+            {
+                StopAnimation(PressStartAnim);
+
+                if (PressStart)
+                {
+                    PressStart->SetVisibility(ESlateVisibility::Hidden);
+                }
+            }
+        }
+
+
     }
 }
 
@@ -143,7 +219,7 @@ void UHUD_CharacterSelect::RecalculateMaxCpu()
     }
     else
     {
-        MaxCpuCount = 3; // 기본값 (싱글 모드 등)
+        MaxCpuCount = 3;
     }
 }
 
@@ -152,6 +228,25 @@ void UHUD_CharacterSelect::UpdateCpuText()
     if (CPU)
     {
         CPU->SetText(FText::AsNumber(CpuCount));
+    }
+
+    if (Hard)
+    {
+        switch (CpuCount)
+        {
+        case 1:
+            Hard->SetText(FText::FromString(TEXT("고려")));
+            break;
+        case 2:
+            Hard->SetText(FText::FromString(TEXT("금강")));
+            break;
+        case 3:
+            Hard->SetText(FText::FromString(TEXT("태백")));
+            break;
+        default:
+            Hard->SetText(FText::GetEmpty()); 
+            break;
+        }
     }
 }
 
@@ -164,7 +259,7 @@ FString UHUD_CharacterSelect::GetAvailableRandomID()
 
 void UHUD_CharacterSelect::ApplyCpuCharacterToPanel(int32 CpuIndex, const FString& CharacterID)
 {
-    FString PlayerID = FString::Printf(TEXT("%d"), CpuIndex + 1);  // 예: 2 ~ 4
+    FString PlayerID = FString::Printf(TEXT("%d"), CpuIndex + 1);
 
     static TMap<FString, FString> NameMap = {
         {TEXT("1"), TEXT("자 기사")},
@@ -182,38 +277,17 @@ void UHUD_CharacterSelect::ApplyCpuCharacterToPanel(int32 CpuIndex, const FStrin
     }
 }
 
-
 void UHUD_CharacterSelect::ClearCpuCharacterFromPanel(int32 CpuIndex)
 {
     switch (CpuIndex)
     {
-    case 1:
-        if (Pannel2)
-        {
-            Pannel2->SetCharacter(TEXT("혼백"), TEXT("")); 
-        }
-        break;
-    case 2:
-        if (Pannel3)
-        {
-            Pannel3->SetCharacter(TEXT("혼백"), TEXT(""));
-        }
-        break;
-    case 3:
-        if (Pannel4)
-        {
-            Pannel4->SetCharacter(TEXT("혼백"), TEXT(""));
-        }
-        break;
-    default:
-        break;
+    case 1: if (Pannel2) Pannel2->SetCharacter(TEXT("혼백"), TEXT("")); break;
+    case 2: if (Pannel3) Pannel3->SetCharacter(TEXT("혼백"), TEXT("")); break;
+    case 3: if (Pannel4) Pannel4->SetCharacter(TEXT("혼백"), TEXT("")); break;
     }
 }
 
-
-
-
 void UHUD_CharacterSelect::ApplyCpuCharacters()
 {
-    // 비어 있어도 OK. 반드시 정의만 되어 있으면 된다.
+    // 비어 있어도 OK
 }

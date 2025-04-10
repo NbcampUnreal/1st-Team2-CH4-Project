@@ -26,6 +26,16 @@ public:
 
 protected:
 
+    UPROPERTY(meta = (BindWidgetAnim), Transient)
+    UWidgetAnimation* PressStartAnim;
+
+    bool bPressStartPlayed = false;
+
+    TMap<FString, TArray<int32>> CharacterSelections;
+
+
+    UPROPERTY(meta = (BindWidget)) UTextBlock* PressStart;
+
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_1;
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_2;
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_3;
@@ -35,11 +45,7 @@ protected:
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_7;
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_8;
 
-    TMap<FString, TArray<int32>> CharacterSelections;
-
-    
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectPanel* Pannel1;
-
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectPanel* Pannel2;
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectPanel* Pannel3;
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectPanel* Pannel4;
@@ -59,6 +65,10 @@ protected:
 
     UPROPERTY(meta = (BindWidget))
     UTextBlock* CPU;
+
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* Hard;
+
 
     UFUNCTION(BlueprintCallable)
     void OnCpuUp();
