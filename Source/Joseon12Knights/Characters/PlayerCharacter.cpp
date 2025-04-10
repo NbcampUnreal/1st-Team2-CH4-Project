@@ -9,7 +9,6 @@
 // Sets default values
 APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage(nullptr), UltimateMontage(nullptr)
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	MoveSpeed = 50.f;
@@ -50,9 +49,11 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 
 	ShieldComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Shield"));
 	ShieldComponent->SetupAttachment(GetMesh(), FName("ShieldSocket"));
+
+	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
+	StatComponent = CreateDefaultSubobject<UStatComponent>(TEXT("StatComponent"));
 }
 
-// Called when the game starts or when spawned
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -61,14 +62,12 @@ void APlayerCharacter::BeginPlay()
 	//ShieldComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName(TEXT("ShieldSocket")));
 }
 
-// Called every frame
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
-// Called to bind functionality to input
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -188,6 +187,12 @@ void APlayerCharacter::StartJump(const FInputActionValue& Value)
 
 	Jump();
 
+	// 점프 사운드 재생
+	if (JumpSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, JumpSound, GetActorLocation());
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("Jump %d"), JumpCurrentCount);
 }
 
@@ -223,23 +228,31 @@ void APlayerCharacter::Roll(const FInputActionValue& Value)
 
 void APlayerCharacter::Guard(const FInputActionValue& Value)
 {
-	bool bIsGuard = Value.Get<bool>();
+		bool bIsGuard = Value.Get<bool>();
 
-	UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
+		UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
 
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		// 사운드 재생
+		if (!bIsGuarding && bIsGuard && GuardSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
+		}
 
-	if (AnimInstance && GuardMontage && !AnimInstance->Montage_IsPlaying(GuardMontage))
-	{
-		AnimInstance->StopAllMontages(1);
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-		AnimInstance->Montage_Play(GuardMontage);
-	}
+		if (AnimInstance && GuardMontage && !AnimInstance->Montage_IsPlaying(GuardMontage))
+		{
+			AnimInstance->StopAllMontages(1);
+			AnimInstance->Montage_Play(GuardMontage);
+		}
+
+		bIsGuarding = true;
 }
 
 void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 {
 	bool bIsGuard = Value.Get<bool>();
+	bIsGuarding = false;
 
 	UE_LOG(LogTemp, Warning, TEXT("Release GUARD %d "), bIsGuard);
 
@@ -251,23 +264,23 @@ void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 	}
 }
 
-void APlayerCharacter::NormalAttack(const FInputActionValue& Value)
+float APlayerCharacter::CalculateDamage(float BaseDamage, APlayerCharacter* Attacker)
 {
-	int Size = NormalAttackMontages.Num();
-	int PrevIndex = NormalAttackMontageIndex;
-	NormalAttackMontageIndex++;
-	UAnimMontage* NormalAttackMontage = NormalAttackMontages[NormalAttackMontageIndex % Size];
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-
-	if (AnimInstance && NormalAttackMontage && !AnimInstance->Montage_IsPlaying(NormalAttackMontages[PrevIndex % Size]))
+	float AttackerMultiplier = 1.0f;
+	if (Attacker)
 	{
-		AnimInstance->StopAllMontages(1);
-		AnimInstance->Montage_Play(NormalAttackMontage);
+		if (UBuffComponent* AttackerBuff = Attacker->FindComponentByClass<UBuffComponent>())
+		{
+			AttackerMultiplier = AttackerBuff->GetAttackMultiplier();
+		}
 	}
+
+	float DefenderMultiplier = 1.0f;
+	if (UBuffComponent* DefenderBuff = FindComponentByClass<UBuffComponent>())
+	{
+		DefenderMultiplier = DefenderBuff->GetDefenseMultiplier();
+	}
+
+	// 예시: 공격 배율을 곱하고, 방어 배율로 나누어 최종 데미지를 계산
+	return BaseDamage * AttackerMultiplier / DefenderMultiplier;
 }
-
-
-
-
-
