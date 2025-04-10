@@ -21,7 +21,6 @@ void UHUD_CharacterSelectTile::NativeConstruct()
 void UHUD_CharacterSelectTile::SetupCharacterTile(const FString& InCharacterID)
 {
     CharacterID = InCharacterID;
-
     CharacterNameMap = 
     {
         {TEXT("1"), TEXT("자 기사")},
@@ -29,9 +28,9 @@ void UHUD_CharacterSelectTile::SetupCharacterTile(const FString& InCharacterID)
         {TEXT("3"), TEXT("인 기사")},
         {TEXT("4"), TEXT("진 기사")},
         {TEXT("5"), TEXT("잠금")},
-        {TEXT("6"), TEXT("잠금2")},
-        {TEXT("7"), TEXT("잠금3")},
-        {TEXT("8"), TEXT("잠금4")}
+        {TEXT("6"), TEXT("잠금")},
+        {TEXT("7"), TEXT("잠금")},
+        {TEXT("8"), TEXT("잠금")}
     };
 
     FString* DisplayName = CharacterNameMap.Find(InCharacterID);
