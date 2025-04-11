@@ -4,17 +4,22 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/PrimitiveComponent.h"
+#include "Net/UnrealNetwork.h"
+#include "Kismet/GameplayStatics.h"
 
 
 // Sets default values
-APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage(nullptr), UltimateMontage(nullptr)
+APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage(nullptr), UltimateMontage(nullptr), DashMontage(nullptr)
 {
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	MoveSpeed = 50.f;
 	DashDistance = 2000.f;
 	JumpMaxCount = 2;
-	
+
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("/Game/ModularAnimalKnightsPolyart/Meshes/OneMeshCharacter/RabitSK.RabitSK"));
 	///Game/ModularAnimalKnightsPolyart/Meshes/OneMeshCharacter/RabitSK.RabitSK
 
@@ -50,16 +55,88 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 	ShieldComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Shield"));
 	ShieldComponent->SetupAttachment(GetMesh(), FName("ShieldSocket"));
 
+	WeaponComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+	ShieldComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+
+	UCapsuleComponent* Capsule = GetCapsuleComponent();
+	
+	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	Capsule->SetCollisionObjectType(ECC_Pawn); 
+	Capsule->SetCollisionResponseToAllChannels(ECR_Ignore);
+	Capsule->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
+	Capsule->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+	Capsule->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
+	Capsule->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	Capsule->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Overlap);
+	Capsule->CanCharacterStepUpOn = ECB_No;
+
+	Capsule->ComponentTags.Add("Player");
+
 	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
 	StatComponent = CreateDefaultSubobject<UStatComponent>(TEXT("StatComponent"));
+
+}
+
+void APlayerCharacter::Test()
+{
+	UE_LOG(LogTemp, Warning, TEXT("TEST : %s"), *GetName());
+}
+
+void APlayerCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	//if (OtherActor == this) return;
+
+	//if (OtherComp && OtherComp->ComponentHasTag("Player"))
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
+	//}
+}
+
+void APlayerCharacter::OnWeaponOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	//if (OtherActor == this) return;
+
+	//if (OtherComp && OtherComp->ComponentHasTag("Player"))
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
+	//}
+	
+
+	if (OtherActor == this) return;
+
+	if (APlayerCharacter* EnemyCharacter = Cast<APlayerCharacter>(OtherActor))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
+		
+		UGameplayStatics::ApplyDamage(EnemyCharacter, 50.f, GetController(), this, UDamageType::StaticClass());
+	}
+}
+
+float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Take Damage"));
+	float KnockBackDistance = bIsGuarding ? 500.f : 1000.f;
+
+	FVector Direction = DamageCauser->GetActorLocation() - GetActorLocation();
+
+	//FVector Direction = GetMesh()->GetRightVector() * DashDistance;
+	LaunchCharacter(-Direction.GetSafeNormal() * KnockBackDistance, true, false);
+
+	return 0.0f;
 }
 
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnCapsuleOverlap);
+	WeaponComponent->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnWeaponOverlap);
+}
 
-	//WeaponComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName(TEXT("WeaponSocket")));
-	//ShieldComponent->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName(TEXT("ShieldSocket")));
+void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(APlayerCharacter, bIsDoubleJump);
 }
 
 void APlayerCharacter::Tick(float DeltaTime)
@@ -159,6 +236,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	}
 }
 
+
 void APlayerCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
@@ -170,19 +248,30 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 {
 	float AxisValue = Value.Get<float>();
 
+	float Direction = AxisValue < 0 ? 1 : -1;
+
 	AddMovementInput(GetActorForwardVector(), AxisValue * MoveSpeed);
 
-	float Direction = AxisValue < 0 ? 1 : -1;
 	FRotator CurrentRotation = FRotator(0.f, Direction * 90.f, 0.f);
 	GetMesh()->SetWorldRotation(CurrentRotation);
 }
 
 void APlayerCharacter::StartJump(const FInputActionValue& Value)
 {
+	ServerStartJump();
+}
+
+void APlayerCharacter::ServerStartJump_Implementation()
+{
+	MulticastStartJump();
+}
+
+void APlayerCharacter::MulticastStartJump_Implementation()
+{
+	//JumpCount++;
 	if (JumpCurrentCount == 1)
 	{
 		bIsDoubleJump = true;
-		UE_LOG(LogTemp, Warning, TEXT("Double Jump"));
 	}
 
 	Jump();
@@ -264,6 +353,38 @@ void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 	}
 }
 
+void APlayerCharacter::NormalAttack(const FInputActionValue& Value)
+{
+	ServerAttack();
+}
+
+void APlayerCharacter::ServerAttack_Implementation()
+{
+	MulticastAttack();
+}
+
+void APlayerCharacter::MulticastAttack_Implementation()
+{
+	int Size = NormalAttackMontages.Num();
+	int PrevIndex = NormalAttackMontageIndex;
+	NormalAttackMontageIndex++;
+	UAnimMontage* NormalAttackMontage = NormalAttackMontages[NormalAttackMontageIndex % Size];
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance && NormalAttackMontage && !AnimInstance->Montage_IsPlaying(NormalAttackMontages[PrevIndex % Size]))
+	{
+		AnimInstance->StopAllMontages(1);
+		AnimInstance->Montage_Play(NormalAttackMontage);
+	}
+
+	// 사운드 재생
+	if (NormalAttackSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, NormalAttackSound, GetActorLocation());
+	}
+}
+
 float APlayerCharacter::CalculateDamage(float BaseDamage, APlayerCharacter* Attacker)
 {
 	float AttackerMultiplier = 1.0f;
@@ -284,3 +405,4 @@ float APlayerCharacter::CalculateDamage(float BaseDamage, APlayerCharacter* Atta
 	// 예시: 공격 배율을 곱하고, 방어 배율로 나누어 최종 데미지를 계산
 	return BaseDamage * AttackerMultiplier / DefenderMultiplier;
 }
+

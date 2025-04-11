@@ -19,12 +19,38 @@ class JOSEON12KNIGHTS_API APlayerCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	APlayerCharacter();
 
 protected:
-	// Called when the game starts or when spawned
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Stat")
+	UFUNCTION()
+	void Test();
+
+	UFUNCTION()
+	void OnCapsuleOverlap(
+		UPrimitiveComponent* OverlappedComp,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnWeaponOverlap(
+		UPrimitiveComponent* OverlappedComp,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
+
+	virtual float TakeDamage(
+		float DamageAmount,
+		struct FDamageEvent const& DamageEvent,
+		class AController* EventInstigator,
+		AActor* DamageCauser
+	) override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated)
 	bool bIsDoubleJump;
 	virtual void BeginPlay() override;
 
@@ -76,6 +102,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
 	UStatComponent* StatComponent;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:	
 	// Called every frame
@@ -93,6 +120,12 @@ public:
 	UFUNCTION()
 	void StartJump(const FInputActionValue& Value);
 
+	UFUNCTION(Server, Unreliable)
+	void ServerStartJump();
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastStartJump();
+
 	UFUNCTION()
 	void StopJump(const FInputActionValue& Value);
 
@@ -106,30 +139,17 @@ public:
 	void ReleaseGuard(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void NormalAttack(const FInputActionValue& Value)
-	{
-		int Size = NormalAttackMontages.Num();
-		int PrevIndex = NormalAttackMontageIndex;
-		NormalAttackMontageIndex++;
-		UAnimMontage* NormalAttackMontage = NormalAttackMontages[NormalAttackMontageIndex % Size];
+	void NormalAttack(const FInputActionValue& Value);
 
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	UFUNCTION(Server, Unreliable)
+	void ServerAttack();
 
-		if (AnimInstance && NormalAttackMontage && !AnimInstance->Montage_IsPlaying(NormalAttackMontages[PrevIndex % Size]))
-		{
-			AnimInstance->StopAllMontages(1);
-			AnimInstance->Montage_Play(NormalAttackMontage);
-		}
-
-		// 사운드 재생
-		if (NormalAttackSound)
-		{
-			UGameplayStatics::PlaySoundAtLocation(this, NormalAttackSound, GetActorLocation());
-		}
-	}
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastAttack();
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	float CalculateDamage(float BaseDamage, APlayerCharacter* Attacker);
+
 	UFUNCTION()
 	virtual void Skill(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Skill, );
 	UFUNCTION()

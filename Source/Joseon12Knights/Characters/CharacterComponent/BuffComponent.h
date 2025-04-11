@@ -11,6 +11,7 @@ enum class EBuffType : uint8
 	Slow,
 	Poison,
 	Bleed,
+	Stealth,
 	AttackBuff,
 	DefenseBuff
 };
