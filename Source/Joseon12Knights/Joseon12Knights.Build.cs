@@ -16,7 +16,8 @@ public class Joseon12Knights : ModuleRules
             "UMG",
             "Slate",
             "SlateCore",
-            "EnhancedInput"
+            "EnhancedInput",
+            "Niagara"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] { });

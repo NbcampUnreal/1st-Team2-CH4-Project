@@ -6,6 +6,9 @@
 #include "GameFramework/Character.h"
 #include "CharacterComponent/BuffComponent.h"
 #include "CharacterComponent/StatComponent.h"
+#include "NiagaraSystem.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "PlayerCharacter.generated.h"
 
@@ -139,4 +142,29 @@ protected:
 
 private:
 	int NormalAttackMontageIndex;
+
+// ==============
+// Targeting Logic
+// ==============
+public:
+	UPROPERTY(EditAnywhere, Category = "Targeting")
+	float AttackRadius = 106.0f;  // 공격 감지 반경
+
+	UPROPERTY(EditAnywhere, Category = "Targeting")
+	float ForwardOffset = 30.0f; // 전방 오프셋 거리
+
+	UPROPERTY(EditAnywhere, Category = "Targeting")
+	bool bDebugTargeting = false; // 디버그 시각화 여부
+
+	UPROPERTY(EditAnywhere, Category = "Targeting")
+	TEnumAsByte<ECollisionChannel> TargetCollisionChannel = ECC_Pawn; // 타겟 감지 채널
+
+	// 공격 대상 찾기 함수
+	APlayerCharacter* GetTargetPlayer();
+	TArray<APlayerCharacter*> FindTargetsInRadius(const FVector& Origin, float Radius);
+	APlayerCharacter* SelectBestTarget(const TArray<APlayerCharacter*>& PotentialTargets);
+
+public:
+	UFUNCTION(BlueprintCallable, Category = "Component")
+	UStatComponent* GetStatComponent() const { return StatComponent; }
 };

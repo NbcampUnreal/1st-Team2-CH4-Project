@@ -26,12 +26,6 @@ void ARatKnight::BeginPlay()
 	}
 }
 
-APlayerCharacter* ARatKnight::GetTargetPlayer()
-{
-	// TODO: 타겟팅 로직 구현 필요 (라인트레이스? 콜리전?)
-	return nullptr; // 임시로 널 반환
-}
-
 // ====================
 // RatKnight W Skill Logic
 // ====================
@@ -60,7 +54,7 @@ void ARatKnight::Skill(const FInputActionValue& Value)
 	APlayerCharacter* Target = GetTargetPlayer();
 	if (Target)
 	{
-		if (UBuffComponent* TargetBuffComp = FindComponentByClass<UBuffComponent>())
+		if (UBuffComponent* TargetBuffComp = Target -> FindComponentByClass<UBuffComponent>()) // 타겟에게 디버프 적용...!
 		{
 			FBuffInfo SlowDebuff;
 			SlowDebuff.BuffType = EBuffType::Slow;
@@ -76,7 +70,7 @@ void ARatKnight::Skill(const FInputActionValue& Value)
 	}
 
 	// 2) 쥐기사 본인에게 은신 효과 적용 (5초간 은신)
-	if (UBuffComponent* SelfBuffComp = FindComponentByClass<UBuffComponent>())
+	if (UBuffComponent* SelfBuffComp = FindComponentByClass<UBuffComponent>()) // 쥐기사 본인에게 은신 효과 적용
 	{
 		FBuffInfo StealthBuff;
 		StealthBuff.BuffType = EBuffType::Stealth;
@@ -297,15 +291,35 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 	APlayerCharacter* Target = GetTargetPlayer();
 	if (Target) 
 	{
-		if (UBuffComponent* TargetBuffComp = FindComponentByClass<UBuffComponent>())
+		if (UBuffComponent* TargetBuffComp = Target -> FindComponentByClass<UBuffComponent>()) // 타겟에게 디버프 적용
 		{
 			FBuffInfo PoisonDebuff;
 			PoisonDebuff.BuffType = EBuffType::Poison;
 			PoisonDebuff.Duration = 4.0f;
 			PoisonDebuff.DamageOverTimePercent = 0.05f; // 초당 5% 공격력에 해당하는 도트 효과
 			TargetBuffComp->AddBuff(PoisonDebuff);
+
+			// 독 데미지는 스킬 사용자의 공격력에 기반하므로, 공격자(=this)의 StatComponent에서 값을 가져와 저장
+			if (this->GetStatComponent())
+			{
+				PoisonDebuff.SourceAttackValue = this->GetStatComponent()->GetAttack();
+			}
+
+			TargetBuffComp->AddBuff(PoisonDebuff);
 		}
+
 		UE_LOG(LogTemp, Warning, TEXT("RatKnight 궁극기 타격 성공!"));
+
+		// 타겟 위치에서 이펙트 재생 (독 또는 출혈)
+		if (RatPoisonNiagaraEffect) 
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				RatPoisonNiagaraEffect,
+				Target->GetActorLocation(),
+				Target->GetActorRotation()
+			);
+		}
 	}
 	else
 	{
