@@ -99,7 +99,23 @@ void ATigerKnight::Ultimate(const FInputActionValue& Value)
 
 			TargetBuffComp->AddBuff(BleedDebuff);
 			UE_LOG(LogTemp, Warning, TEXT("TigerKnight Ultimate is Succeed!"));
+
+
+			// Å¸°Ù À§Ä¡¿¡¼­ ÀÌÆåÆ® Àç»ý (µ¶ ¶Ç´Â ÃâÇ÷)
+			if (TigerBleedNiagaraEffect)
+			{
+				UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+					GetWorld(),
+					TigerBleedNiagaraEffect,
+					Target->GetActorLocation(),
+					Target->GetActorRotation()
+				);
+			}
 		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TigerKnight ±Ã±Ø±â Å¸°Ý ½ÇÆÐ!"));
 	}
 
 	if (TigerUltimateEffect)

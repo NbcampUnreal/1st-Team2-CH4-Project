@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "PlayerCharacter.h"
 #include "TigerKnight.generated.h"
+
 UCLASS(Blueprintable)
 class JOSEON12KNIGHTS_API ATigerKnight : public APlayerCharacter
 {
@@ -25,6 +26,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TigerKnight Skill")
 	USoundBase* TigerUltimateSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TigerKnight Skill")
+	UNiagaraSystem* TigerBleedNiagaraEffect;
 
 private:
 	// 쿨타임 관리 변수

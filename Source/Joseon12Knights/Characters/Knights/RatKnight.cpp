@@ -308,6 +308,7 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 			TargetBuffComp->AddBuff(PoisonDebuff);
 		}
 
+
 		UE_LOG(LogTemp, Warning, TEXT("RatKnight 궁극기 타격 성공!"));
 
 		// 타겟 위치에서 이펙트 재생 (독 또는 출혈)
