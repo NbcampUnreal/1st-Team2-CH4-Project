@@ -6,7 +6,7 @@
 
 void AOxKnight::Skill(const FInputActionValue& Value)
 {
-	if(!bCanUseSkill)
+	if (!bCanUseSkill)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("OxKnight W is CoolDown.."));
 		return;
@@ -21,17 +21,26 @@ void AOxKnight::Skill(const FInputActionValue& Value)
 	}
 
 	// 철벽 수호(방어력 증가 + 이속감소)
-	if (UBuffComponent* BuffComp = FindComponentByClass<UBuffComponent>())
+	APlayerCharacter* Target = GetTargetPlayer();
+	if (Target)
 	{
 
-		FBuffInfo GuardianBuff;
-		GuardianBuff.BuffType = EBuffType::DefenseBuff;
-		GuardianBuff.Duration = 4.0f;
-		GuardianBuff.MoveSpeedMultiplier = 0.7f;  //이속감소
-		GuardianBuff.DefenseMultiplier = 0.6f; //40% 피해감소
-		BuffComp->AddBuff(GuardianBuff);
+		if (UBuffComponent* BuffComp = FindComponentByClass<UBuffComponent>())
+		{
 
-		
+			FBuffInfo GuardianBuff;
+			GuardianBuff.BuffType = EBuffType::DefenseBuff;
+			GuardianBuff.Duration = 4.0f;
+			GuardianBuff.MoveSpeedMultiplier = 0.7f;  //이속감소
+			GuardianBuff.DefenseMultiplier = 0.6f; //40% 피해감소
+			BuffComp->AddBuff(GuardianBuff);
+			UE_LOG(LogTemp, Warning, TEXT("OxKnight W Skill is Succeed!"));
+
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("OxKnight W Skill is  Failed"));
 	}
 
 	// 쿨다운 시작 (예: 5초)
@@ -73,15 +82,27 @@ void AOxKnight::Ultimate(const FInputActionValue& Value)
 	}
 
 	//스턴과 넉백
-	if (UBuffComponent* BuffComp = FindComponentByClass<UBuffComponent>())
+	APlayerCharacter* Target = GetTargetPlayer();
+	if (Target)
 	{
-		FBuffInfo StunBuff;
-		StunBuff.BuffType = EBuffType::DefenseBuff;
-		StunBuff.Duration = 4.0f;
-		BuffComp->AddBuff(StunBuff);
+		if (UBuffComponent* BuffComp = Target->FindComponentByClass<UBuffComponent>())
+		{
+			FBuffInfo StunBuff;
+			StunBuff.BuffType = EBuffType::DefenseBuff;
+			StunBuff.Duration = 4.0f;
+			StunBuff.MoveSpeedMultiplier = 0.1f;
+			BuffComp->AddBuff(StunBuff);
+			const float UltimateLaunchForce = 500.0f; // 힘의 세기(높을수록 멀리날라감)
+			const FVector LauchVelocity = GetActorForwardVector() * UltimateLaunchForce;  
+			LaunchCharacter(LauchVelocity, true, false); // X/Y 강제 적용, Z는 유지
+			UE_LOG(LogTemp, Warning, TEXT("OxKnight Ultimate is Succeed!"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("OxKnight Ultimate is Failed!"));
 
 	}
-
 	if (OXUltimateEffect)
 	{
 		UGameplayStatics::SpawnEmitterAttached(OXUltimateEffect, GetMesh(), FName("UltimateSocket"));
