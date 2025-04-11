@@ -19,19 +19,23 @@ void ATigerKnight::Skill(const FInputActionValue& Value)
 		AnimInstance->Montage_Play(SkillAttackMontage);
 	}
 
+
+
 	// 호랑이의 분노 적용 (공격력 , 공격속도 증가)
-	if (UBuffComponent* BuffComp = FindComponentByClass<UBuffComponent>())
-	{
-		FBuffInfo FastBuff;
-		FastBuff.BuffType = EBuffType::AttackBuff;
-		FastBuff.AttackMultiplier = 1.25f;  // 공격력 +25% 증가
-		FastBuff.Duration = 4.0f;
-		BuffComp->AddBuff(FastBuff);
-		
+	//APlayerCharacter* Target = GetTargetPlayer();
+	
+		if (UBuffComponent* BuffComp = FindComponentByClass<UBuffComponent>())
+		{
+			FBuffInfo FastBuff;
+			FastBuff.BuffType = EBuffType::AttackBuff;
+			FastBuff.AttackMultiplier = 1.25f;  // 공격력 +25% 증가
+			FastBuff.MoveSpeedMultiplier = 1.25f; //이동속도 +25% 증가
+			FastBuff.Duration = 4.0f;
+			BuffComp->AddBuff(FastBuff);
+			UE_LOG(LogTemp, Warning, TEXT("TigerKnight W Skill is Succeed!"));
+		}
 
-
-		
-	}
+	
 
 	// 쿨다운 시작 (예: 5초)
 	bCanUseSkill = false;  
@@ -61,7 +65,7 @@ void ATigerKnight::Ultimate(const FInputActionValue& Value)
 {
 	if (!bCanUseUltimate)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("TigerKnight ultimate is CoolDown..."));
+		UE_LOG(LogTemp, Warning, TEXT("TigerKnight Ultimate is CoolDown..."));
 		return;
 	}
 
@@ -73,7 +77,9 @@ void ATigerKnight::Ultimate(const FInputActionValue& Value)
 		AnimInstance->Montage_Play(UltimateMontage);
 	}
 
-	// 출혈 효과 적용 (강력한 베기 공격, 4초 지속, 적의 방어력 저하)
+	// 출혈 효과 적용 (강력한 베기 공격, 4초 지속, 적의 방어력 저하) ->얘 처리가 쉽지않음
+	//APlayerCharacter* Target = GetTargetPlayer();
+	
 	if (UBuffComponent* BuffComp = FindComponentByClass<UBuffComponent>())
 	{
 		FBuffInfo BloodBuff;
@@ -81,8 +87,8 @@ void ATigerKnight::Ultimate(const FInputActionValue& Value)
 		BloodBuff.Duration = 4.0f;
 		BloodBuff.DamageOverTimePercent = 0.1f; // 방어력 저하를 어떻게 할까? 1)AI 방어력 내리기 ? 2)캐락터 공격력 늘리기?
 		BuffComp->AddBuff(BloodBuff);
+		UE_LOG(LogTemp, Warning, TEXT("TigerKnight Ultimate is Succeed!"));
 
-		
 	}
 
 	if (TigerUltimateEffect)
@@ -105,3 +111,8 @@ void ATigerKnight::Ultimate(const FInputActionValue& Value)
 			UE_LOG(LogTemp, Warning, TEXT("TigerKnight Ultimate is available!"));
 		}, 8.0f, false);
 }
+
+
+
+
+	

@@ -27,7 +27,8 @@ void AOxKnight::Skill(const FInputActionValue& Value)
 		FBuffInfo GuardianBuff;
 		GuardianBuff.BuffType = EBuffType::DefenseBuff;
 		GuardianBuff.Duration = 4.0f;
-		GuardianBuff.MoveSpeedMultiplier = 0.7f;
+		GuardianBuff.MoveSpeedMultiplier = 0.7f;  //이속감소
+		GuardianBuff.DefenseMultiplier = 0.6f; //40% 피해감소
 		BuffComp->AddBuff(GuardianBuff);
 
 		
