@@ -142,7 +142,16 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	UpdateMovementSpeed();
+}
 
+void APlayerCharacter::UpdateMovementSpeed() // 매 프레임마다 호출되어 이동 속도를 업데이트.
+{
+	if (GetCharacterMovement() && BuffComponent)
+	{
+		float EffectiveSpeed = MoveSpeed * BuffComponent->GetMoveSpeedMultiplier();
+		GetCharacterMovement()->MaxWalkSpeed = EffectiveSpeed;
+	}
 }
 
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -488,7 +497,7 @@ APlayerCharacter* APlayerCharacter::SelectBestTarget(const TArray<APlayerCharact
 
 	// 타겟 선택 기준:
 	// 1. 우선순위: 내 시야각 안에 있는 적
-	// 2. 거리정책: 가장 가까운 적
+	// 2. 거리: 가장 가까운 적
 
 	APlayerCharacter* BestTarget = nullptr;
 	float BestScore = -1.0f;

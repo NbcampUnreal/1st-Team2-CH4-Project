@@ -23,7 +23,7 @@ void ATigerKnight::Skill(const FInputActionValue& Value)
 		AnimInstance->Montage_Play(SkillAttackMontage);
 	}
 
-	// 호랑이의 분노 적용 (공격력 , 이동속도 증가)
+	// 호랑이의 분노 적용 (공격력, 이동속도 증가)
 	if (UBuffComponent* BuffComp = FindComponentByClass<UBuffComponent>())
 	{
 		// 공격력 증가 버프
@@ -37,14 +37,14 @@ void ATigerKnight::Skill(const FInputActionValue& Value)
 		FBuffInfo SpeedBuff;
 		// 만약 별도의 타입을 사용하고 싶다면 EBuffType::SpeedBuff를 추가하고 사용.
 		SpeedBuff.BuffType = EBuffType::AttackBuff;
-		SpeedBuff.MoveSpeedMultiplier = 1.25f; // +25% 이동속도
+		SpeedBuff.MoveSpeedMultiplier = 1.3f; // +30% 이동속도
 		SpeedBuff.Duration = 5.0f;
 		BuffComp->AddBuff(SpeedBuff);
 
 		UE_LOG(LogTemp, Warning, TEXT("TigerKnight W Skill Succeed!"));
 	}
 
-	// 쿨다운 시작 (예: 5초)
+	// 쿨다운 시작 (예: 4초)
 	bCanUseSkill = false;  
 	GetWorldTimerManager().SetTimer(SkillCooldownTimerHandle, [this]()
 		{
@@ -65,7 +65,7 @@ void ATigerKnight::Skill(const FInputActionValue& Value)
 	}
 	UE_LOG(LogTemp, Warning, TEXT("AUHUNG!!"));
 
-	DebugPrintBuffs(); // 버프 적용 상태 출력
+	DebugPrintSelfBuffs(); // 버프 적용 상태 출력
 }
 
 // ====================
@@ -154,7 +154,7 @@ void ATigerKnight::Ultimate(const FInputActionValue& Value)
 // ==========
 //  디버그 함수
 // ==========
-void ATigerKnight::DebugPrintBuffs() const
+void ATigerKnight::DebugPrintSelfBuffs() const
 {
 	if (UBuffComponent* BuffComp = const_cast<ATigerKnight*>(this)->FindComponentByClass<UBuffComponent>())
 	{

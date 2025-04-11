@@ -92,7 +92,6 @@ float UBuffComponent::GetMoveSpeedMultiplier() const
 	{
 		Multiplier *= Buff.MoveSpeedMultiplier;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("Move Speed Multiplier: %.2f"), Multiplier);
 	return Multiplier;
 }
 

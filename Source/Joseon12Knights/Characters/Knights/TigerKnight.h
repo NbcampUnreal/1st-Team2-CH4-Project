@@ -43,5 +43,5 @@ private:
 // ==========
 public:
 	UFUNCTION(BlueprintCallable, Category = "Debug")
-	void DebugPrintBuffs() const;
+	void DebugPrintSelfBuffs() const;
 };

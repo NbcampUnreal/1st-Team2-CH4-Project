@@ -187,4 +187,10 @@ public:
 public:
 	UFUNCTION(BlueprintCallable, Category = "Component")
 	UStatComponent* GetStatComponent() const { return StatComponent; }
+
+protected:
+	// 이동속도 업데이트
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void UpdateMovementSpeed();
+
 };

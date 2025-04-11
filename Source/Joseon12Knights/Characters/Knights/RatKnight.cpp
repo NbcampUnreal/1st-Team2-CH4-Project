@@ -107,7 +107,7 @@ void ARatKnight::Skill(const FInputActionValue& Value)
 			UE_LOG(LogTemp, Warning, TEXT("RatKnight W 스킬 사용 가능!"));
 		}, 8.0f, false);
 
-	DebugPrintBuffs(Target);
+	DebugPrintTargetBuffs(Target);
 }
 
 // 은신 상태에서 캐릭터 시각적 효과 설정
@@ -356,7 +356,7 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 // ===========
 //  디버그 함수
 // ===========
-void ARatKnight::DebugPrintBuffs(APlayerCharacter* Target) const
+void ARatKnight::DebugPrintTargetBuffs(APlayerCharacter* Target) const
 {
 	if (Target)
 	{

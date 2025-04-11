@@ -88,5 +88,5 @@ private:
 // ===========
 public:
 	UFUNCTION(BlueprintCallable, Category = "Debug")
-	void DebugPrintBuffs(APlayerCharacter* Target) const;
+	void DebugPrintTargetBuffs(APlayerCharacter* Target) const;
 };
