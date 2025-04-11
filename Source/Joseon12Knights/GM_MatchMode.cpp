@@ -11,7 +11,6 @@ void AGM_MatchMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UE_LOG(LogTemp, Log, TEXT("MatchMode: BeginPlay - Spawning characters"));
 	SpawnCharacters();
 }
 
@@ -24,8 +23,5 @@ void AGM_MatchMode::SpawnCharacters()
 
 		APS_FighterPlayerState* FighterPS = Cast<APS_FighterPlayerState>(PC->PlayerState);
 		FString CharacterID = FighterPS ? FighterPS->GetPlayerName() : TEXT("DefaultChar"); // �ӽ� ID
-
-		UE_LOG(LogTemp, Log, TEXT("Spawning character for %s (ID: %s)"), *PC->GetName(), *CharacterID);
-	
 	}
 }

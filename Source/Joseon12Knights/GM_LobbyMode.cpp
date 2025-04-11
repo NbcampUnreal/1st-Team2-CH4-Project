@@ -9,16 +9,12 @@
 void AGM_LobbyMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-
-	UE_LOG(LogTemp, Log, TEXT("Player joined lobby: %s"), *NewPlayer->GetName());
 	CheckAllPlayersReady();
 }
 
 void AGM_LobbyMode::Logout(AController* Exiting)
 {
 	Super::Logout(Exiting);
-
-	UE_LOG(LogTemp, Log, TEXT("Player left lobby: %s"), *Exiting->GetName());
 	CheckAllPlayersReady();
 }
 
@@ -36,8 +32,6 @@ void AGM_LobbyMode::CheckAllPlayersReady()
 			return;
 		}
 	}
-
-	UE_LOG(LogTemp, Log, TEXT("All players ready. Starting character select."));
 	StartCharacterSelect();
 }
 
@@ -48,7 +42,6 @@ void AGM_LobbyMode::Server_SetReady_Implementation(APlayerController* PC)
 		if (APS_FighterPlayerState* FighterPS = Cast<APS_FighterPlayerState>(PC->PlayerState))
 		{
 			FighterPS->bIsReady = true;
-			UE_LOG(LogTemp, Log, TEXT("Player set ready: %s"), *PC->GetName());
 			CheckAllPlayersReady();
 		}
 	}
