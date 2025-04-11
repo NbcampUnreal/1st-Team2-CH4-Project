@@ -3,7 +3,6 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "GS_FighterState.h" 
-#include "PC_MenuController.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "HUD_CharacterSelect.generated.h"
@@ -11,6 +10,7 @@
 class UHUD_CharacterSelectTile;
 class UHUD_CharacterSelectPanel;
 class UButton;
+class APC_MenuController;
 
 UCLASS()
 class JOSEON12KNIGHTS_API UHUD_CharacterSelect : public UUserWidget

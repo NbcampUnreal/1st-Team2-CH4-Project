@@ -11,6 +11,17 @@ void AGM_SingleMode::BeginPlay()
 
 void AGM_SingleMode::ProceedToMatch()
 {
-	UE_LOG(LogTemp, Log, TEXT("SingleMode: Proceeding to match (OpenLevel ConflictZone)"));
-	UGameplayStatics::OpenLevel(this, FName("ConflictZone"));
+	if (UGI_GameCoreInstance* GI = GetGameInstance<UGI_GameCoreInstance>())
+	{
+		if (GI->SelectedMap.IsValid())
+		{
+			FString AssetName = GI->SelectedMap.GetAssetName(); 
+
+			UGameplayStatics::OpenLevel(this, FName(*AssetName));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("ProceedToMatch: 선택된 맵이 유효하지 않음"));
+		}
+	}
 }

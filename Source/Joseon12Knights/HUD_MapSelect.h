@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "HUD_MapTile.h"
+#include "GI_GameCoreInstance.h"
 #include "HUD_MapSelect.generated.h"
 
 UCLASS()

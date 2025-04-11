@@ -19,24 +19,40 @@ void UHUD_MapSelect::NativeConstruct()
 
     if (Tile3)
     {
-        TArray<TSoftObjectPtr<UWorld>> Options;
-        if (Tile1 && Tile1->LevelToLoad.IsValid())
+        if (UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance()))
         {
-            Options.Add(Tile1->LevelToLoad);
-        }
-        if (Tile2 && Tile2->LevelToLoad.IsValid())
-        {
-            Options.Add(Tile2->LevelToLoad);
+            TArray<TSoftObjectPtr<UWorld>> Options;
+
+            if (Tile1)
+            {
+                Options.Add(GI->SelectedPlayMode == EPlayMode::Single ? Tile1->SingleMap : Tile1->OnlineMap);
+            }
+
+            if (Tile2)
+            {
+                Options.Add(GI->SelectedPlayMode == EPlayMode::Single ? Tile2->SingleMap : Tile2->OnlineMap);
+            }
+
+            if (Options.Num() > 0)
+            {
+                int32 RandIndex = FMath::RandRange(0, Options.Num() - 1);
+                if (GI->SelectedPlayMode == EPlayMode::Single)
+                {
+                    Tile3->SingleMap = Options[RandIndex];
+                }
+                else
+                {
+                    Tile3->OnlineMap = Options[RandIndex];
+                }
+            }
         }
 
-        if (Options.Num() > 0)
-        {
-            int32 RandIndex = FMath::RandRange(0, Options.Num() - 1);
-            Tile3->LevelToLoad = Options[RandIndex];
-        }
     }
 
-
+    if (BackButton)
+    {
+        BackButton->OnClicked.AddDynamic(this, &UHUD_MapSelect::OnBackClicked);
+    }
 
 }
 
@@ -53,6 +69,8 @@ void UHUD_MapSelect::OnBackClicked()
 
 void UHUD_MapSelect::HandleTileSelected(UHUD_MapTile* NewTile)
 {
+    UE_LOG(LogTemp, Warning, TEXT("HandleTileSelected(): %s"), *NewTile->GetName());
+
     if (SelectedTile && SelectedTile != NewTile)
     {
         SelectedTile->SetSelected(false);
@@ -63,28 +81,55 @@ void UHUD_MapSelect::HandleTileSelected(UHUD_MapTile* NewTile)
     {
         SelectedTile->SetSelected(true);
     }
-
 }
+
 
 void UHUD_MapSelect::ConfirmSelection()
 {
     if (!SelectedTile)
     {
-        UE_LOG(LogTemp, Warning, TEXT("❌ ConfirmSelection: SelectedTile is nullptr"));
+        UE_LOG(LogTemp, Error, TEXT("❌ ConfirmSelection: 선택된 타일이 없습니다."));
         return;
     }
 
-    if (!SelectedTile->LevelToLoad.IsValid())
+    if (UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance()))
     {
-        UE_LOG(LogTemp, Warning, TEXT("❌ ConfirmSelection: LevelToLoad is invalid"));
-        return;
+        TSoftObjectPtr<UWorld> MapToLoad;
+
+        if (GI->SelectedPlayMode == EPlayMode::Single)
+        {
+            MapToLoad = SelectedTile->SingleMap;
+        }
+        else if (GI->SelectedPlayMode == EPlayMode::Online)
+        {
+            MapToLoad = SelectedTile->OnlineMap;
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("❌ ConfirmSelection: 알 수 없는 플레이 모드입니다."));
+            return;
+        }
+
+        FString MapName = MapToLoad.ToSoftObjectPath().GetAssetName();
+
+        if (MapName.IsEmpty())
+        {
+            UE_LOG(LogTemp, Error, TEXT("❌ ConfirmSelection: 맵 이름 추출 실패 (빈 문자열)"));
+            return;
+        }
+
+        // ✅ GameInstance에 저장
+        GI->SelectedMap = MapToLoad;
+
+        // ✅ 맵 오픈
+        UE_LOG(LogTemp, Warning, TEXT("🚀 OpenLevel 호출: %s"), *MapName);
+        UGameplayStatics::OpenLevel(this, FName(*MapName));
     }
-
-    FString MapPath = SelectedTile->LevelToLoad.ToSoftObjectPath().GetAssetPathString();
-    UE_LOG(LogTemp, Warning, TEXT("✅ ConfirmSelection: Opening map %s"), *MapPath);
-
-    UGameplayStatics::OpenLevel(this, FName(*SelectedTile->LevelToLoad.ToSoftObjectPath().GetAssetName()));
 }
+
+
+
+
 
 
 

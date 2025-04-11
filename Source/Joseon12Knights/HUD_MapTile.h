@@ -25,18 +25,21 @@ public:
     UPROPERTY(meta = (BindWidget))
     class UImage* Border_Selection;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    TSoftObjectPtr<UWorld> LevelToLoad;
+    // VS 모드일 때 사용할 맵
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map")
+    TSoftObjectPtr<UWorld> SingleMap;
 
-
+    // 온라인 모드일 때 사용할 맵
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map")
+    TSoftObjectPtr<UWorld> OnlineMap;
 
     UFUNCTION()
-    void OnTileClicked(); // 이미 있음
+    void OnTileClicked(); // 클릭 시 호출됨
 
     // 선택 시 상태 적용
     void SetSelected(bool bSelected);
 
+    // 타일 ID (선택적 정보)
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 TileID = 0;
-
 };

@@ -38,6 +38,9 @@ public:
 	UGI_GameCoreInstance();
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TSoftObjectPtr<UWorld> SelectedMap;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	EPlayMode SelectedPlayMode;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)

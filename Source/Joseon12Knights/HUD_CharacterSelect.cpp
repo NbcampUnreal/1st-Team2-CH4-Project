@@ -2,6 +2,7 @@
 #include "Components/TextBlock.h"
 #include "GS_FighterState.h"
 #include "HUD_CharacterSelectPanel.h"
+#include "PC_MenuController.h"
 #include "HUD_CharacterSelectTile.h"
 #include "Kismet/KismetMathLibrary.h"
 
@@ -9,8 +10,19 @@ void UHUD_CharacterSelect::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    bPressStartPlayed = false; 
+    // 1. UI 입력 모드 고정 (허공 클릭 방지)
+    if (APlayerController* PC = GetOwningPlayer())
+    {
+        FInputModeGameAndUI InputMode;
+        InputMode.SetWidgetToFocus(TakeWidget());
+        InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+        InputMode.SetHideCursorDuringCapture(false);
+        PC->SetInputMode(InputMode);
+        PC->bShowMouseCursor = true;
+    }
 
+
+    // 2. 패널 연결 및 타일 초기화
     Tiles = {
         CharacterPannel_1, CharacterPannel_2, CharacterPannel_3, CharacterPannel_4,
         CharacterPannel_5, CharacterPannel_6, CharacterPannel_7, CharacterPannel_8
@@ -27,36 +39,46 @@ void UHUD_CharacterSelect::NativeConstruct()
         }
     }
 
-    if (CharacterPannel_1) CharacterPannel_1->SetupCharacterTile(TEXT("1"));
-    if (CharacterPannel_2) CharacterPannel_2->SetupCharacterTile(TEXT("2"));
-    if (CharacterPannel_3) CharacterPannel_3->SetupCharacterTile(TEXT("3"));
-    if (CharacterPannel_4) CharacterPannel_4->SetupCharacterTile(TEXT("4"));
-    if (CharacterPannel_5) CharacterPannel_5->SetupCharacterTile(TEXT("5"));
-    if (CharacterPannel_6) CharacterPannel_6->SetupCharacterTile(TEXT("6"));
-    if (CharacterPannel_7) CharacterPannel_7->SetupCharacterTile(TEXT("7"));
-    if (CharacterPannel_8) CharacterPannel_8->SetupCharacterTile(TEXT("8"));
+    // 3. 타일 캐릭터 ID 설정
+    const TArray<FString> CharacterIDs = {
+        TEXT("1"), TEXT("2"), TEXT("3"), TEXT("4"),
+        TEXT("5"), TEXT("6"), TEXT("7"), TEXT("8")
+    };
 
+    for (int32 i = 0; i < Tiles.Num(); ++i)
+    {
+        if (Tiles[i])
+        {
+            Tiles[i]->SetupCharacterTile(CharacterIDs[i]);
+        }
+    }
+
+    // 4. 뒤로가기 버튼 연결
     if (BackButton)
+    {
         BackButton->OnClicked.AddDynamic(this, &UHUD_CharacterSelect::OnBackClicked);
+    }
+
+    // 5. GameInstance 기반 복구 (선택된 캐릭터 및 CPU 정보)
+    bPressStartPlayed = false;
 
     if (UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance()))
     {
-        FString CharID = GI->SelectedCharacterID;
+        const FString CharID = GI->SelectedCharacterID;
+
+        // 5-1. 캐릭터 선택 복구
         if (!CharID.IsEmpty())
         {
             NotifyCharacterSelected(CharID, 0);
 
-            FString DisplayName = CharID;
-            static TMap<FString, FString> NameMap = {
+            static const TMap<FString, FString> NameMap = {
                 {TEXT("1"), TEXT("자 기사")},
                 {TEXT("2"), TEXT("축 기사")},
                 {TEXT("3"), TEXT("인 기사")},
                 {TEXT("4"), TEXT("진 기사")}
             };
-            if (NameMap.Contains(CharID))
-            {
-                DisplayName = NameMap[CharID];
-            }
+
+            const FString DisplayName = NameMap.Contains(CharID) ? NameMap[CharID] : CharID;
 
             if (Pannel1)
             {
@@ -64,15 +86,16 @@ void UHUD_CharacterSelect::NativeConstruct()
             }
         }
 
+        // 5-2. CPU 캐릭터 복구
         CpuCount = GI->CpuCharacterIDs.Num();
         UpdateCpuText();
 
         for (int32 i = 1; i <= CpuCount; ++i)
         {
-            FString SavedID = GI->CpuCharacterIDs[i - 1];
-            ApplyCpuCharacterToPanel(i, SavedID);
+            ApplyCpuCharacterToPanel(i, GI->CpuCharacterIDs[i - 1]);
         }
 
+        // 5-3. 애니메이션 복구
         if (!bPressStartPlayed && !CharID.IsEmpty() && CpuCount >= 1 && PressStartAnim)
         {
             UE_LOG(LogTemp, Warning, TEXT("복구 시 조건 만족 → PressStart 애니메이션 재생"));

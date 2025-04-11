@@ -24,36 +24,60 @@ void UHUD_MapTile::NativeConstruct()
 
 void UHUD_MapTile::OnTileClicked()
 {
-    // 3번 타일이면 HUD_MapSelect에서 Tile1/Tile2의 LevelToLoad를 참조
     if (TileID == 3)
     {
         if (UHUD_MapSelect* Parent = GetTypedOuter<UHUD_MapSelect>())
         {
-            TArray<TSoftObjectPtr<UWorld>> Options;
-
-            if (Parent->Tile1 && Parent->Tile1->LevelToLoad.IsValid())
+            if (UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance()))
             {
-                Options.Add(Parent->Tile1->LevelToLoad);
-            }
+                TArray<TSoftObjectPtr<UWorld>> Options;
 
-            if (Parent->Tile2 && Parent->Tile2->LevelToLoad.IsValid())
-            {
-                Options.Add(Parent->Tile2->LevelToLoad);
-            }
+                if (GI->SelectedPlayMode == EPlayMode::Single)
+                {
+                    if (Parent->Tile1 && Parent->Tile1->SingleMap.IsValid())
+                    {
+                        Options.Add(Parent->Tile1->SingleMap);
+                    }
+                    if (Parent->Tile2 && Parent->Tile2->SingleMap.IsValid())
+                    {
+                        Options.Add(Parent->Tile2->SingleMap);
+                    }
 
-            if (Options.Num() > 0)
-            {
-                int32 RandIndex = FMath::RandRange(0, Options.Num() - 1);
-                LevelToLoad = Options[RandIndex];
+                    if (Options.Num() > 0)
+                    {
+                        int32 RandIndex = FMath::RandRange(0, Options.Num() - 1);
+                        SingleMap = Options[RandIndex];
+                    }
+                }
+                else if (GI->SelectedPlayMode == EPlayMode::Online)
+                {
+                    if (Parent->Tile1 && Parent->Tile1->OnlineMap.IsValid())
+                    {
+                        Options.Add(Parent->Tile1->OnlineMap);
+                    }
+                    if (Parent->Tile2 && Parent->Tile2->OnlineMap.IsValid())
+                    {
+                        Options.Add(Parent->Tile2->OnlineMap);
+                    }
+
+                    if (Options.Num() > 0)
+                    {
+                        int32 RandIndex = FMath::RandRange(0, Options.Num() - 1);
+                        OnlineMap = Options[RandIndex];
+                    }
+                }
             }
         }
     }
+
+    UE_LOG(LogTemp, Warning, TEXT("🟩 Tile 클릭됨: %s"), *GetName());
 
     if (UHUD_MapSelect* Parent = GetTypedOuter<UHUD_MapSelect>())
     {
         Parent->HandleTileSelected(this);
     }
 }
+
 
 
 
