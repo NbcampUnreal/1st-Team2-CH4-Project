@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "PlayerCharacter.h"
 #include "TigerKnight.generated.h"
+
 UCLASS(Blueprintable)
 class JOSEON12KNIGHTS_API ATigerKnight : public APlayerCharacter
 {
@@ -12,6 +13,7 @@ protected:
 	void Skill(const FInputActionValue& Value) override;
 	void Ultimate(const FInputActionValue& Value) override;
 
+	// W 스킬 에셋
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TigerKnight Skill")
 	UParticleSystem* TigerSkill1Effect;
 
@@ -19,12 +21,14 @@ protected:
 	USoundBase* TigerSkill1Sound;
 
 	// R 궁극기 에셋
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TigerKnight Skill")
 	UParticleSystem* TigerUltimateEffect;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TigerKnight Skill")
 	USoundBase* TigerUltimateSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TigerKnight Skill")
+	UNiagaraSystem* TigerBleedNiagaraEffect;
 
 private:
 	// 쿨타임 관리 변수
@@ -33,4 +37,11 @@ private:
 	FTimerHandle SkillCooldownTimerHandle;
 	FTimerHandle UltimateCooldownTimerHandle;
 
+
+// ==========
+//  디버그 함수
+// ==========
+public:
+	UFUNCTION(BlueprintCallable, Category = "Debug")
+	void DebugPrintBuffs() const;
 };

@@ -276,7 +276,7 @@ void APlayerCharacter::MulticastStartJump_Implementation()
 
 	Jump();
 
-	// Á¡ÇÁ »ç¿îµå Àç»ý
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 	if (JumpSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, JumpSound, GetActorLocation());
@@ -321,7 +321,7 @@ void APlayerCharacter::Guard(const FInputActionValue& Value)
 
 		UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
 
-		// »ç¿îµå Àç»ý
+		// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 		if (!bIsGuarding && bIsGuard && GuardSound)
 		{
 			UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
@@ -378,7 +378,7 @@ void APlayerCharacter::MulticastAttack_Implementation()
 		AnimInstance->Montage_Play(NormalAttackMontage);
 	}
 
-	// »ç¿îµå Àç»ý
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 	if (NormalAttackSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, NormalAttackSound, GetActorLocation());
@@ -402,7 +402,126 @@ float APlayerCharacter::CalculateDamage(float BaseDamage, APlayerCharacter* Atta
 		DefenderMultiplier = DefenderBuff->GetDefenseMultiplier();
 	}
 
-	// ¿¹½Ã: °ø°Ý ¹èÀ²À» °öÇÏ°í, ¹æ¾î ¹èÀ²·Î ³ª´©¾î ÃÖÁ¾ µ¥¹ÌÁö¸¦ °è»ê
+	// ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ï°ï¿½, ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 	return BaseDamage * AttackerMultiplier / DefenderMultiplier;
 }
 
+// ======================
+// RatKnight Targeting Logic
+// ======================
+APlayerCharacter* APlayerCharacter::GetTargetPlayer()
+{
+	FVector AttackOrigin; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+
+	// ï¿½ï¿½ï¿½â°¡ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+	if (WeaponComponent && WeaponComponent->DoesSocketExist(FName("WeaponSocket")))
+	{
+		AttackOrigin = WeaponComponent->GetSocketLocation(FName("WeaponSocket"));
+	}
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ä³ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½æ¿¡ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+	else
+	{
+		AttackOrigin = GetActorLocation() + GetActorForwardVector() * ForwardOffset;
+	}
+	
+	TArray<APlayerCharacter*> PotentialTargets = FindTargetsInRadius(AttackOrigin, AttackRadius); // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ Ä³ï¿½ï¿½ï¿½Í¸ï¿½ Ã£ï¿½ï¿½
+	APlayerCharacter* BestTarget = SelectBestTarget(PotentialTargets); // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+
+	if (bDebugTargeting) // ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½È­
+	{
+		DrawDebugSphere(GetWorld(), AttackOrigin, AttackRadius, 24,
+			BestTarget ? FColor::Green : FColor::Red, false, 1.0f);
+
+		if (BestTarget)
+		{
+			DrawDebugLine(GetWorld(), AttackOrigin, BestTarget->GetActorLocation(),
+				FColor::Yellow, false, 1.0f, 0, 2.0f);
+		}
+	}
+
+	return BestTarget;
+}
+
+TArray<APlayerCharacter*> APlayerCharacter::FindTargetsInRadius(const FVector& Origin, float Radius)
+{
+	TArray<APlayerCharacter*> FoundTargets;
+	TArray<FOverlapResult> OverlapResults;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this); // ï¿½Ú½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+
+	// ï¿½ï¿½Ã¼ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ë»ï¿½ ï¿½ï¿½ï¿½ï¿½
+	bool bOverlapFound = GetWorld()->OverlapMultiByObjectType(
+		OverlapResults,
+		Origin,
+		FQuat::Identity,
+		FCollisionObjectQueryParams(TargetCollisionChannel), // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã¤ï¿½Î¿ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+		FCollisionShape::MakeSphere(Radius),
+		QueryParams
+	);
+
+	if (bOverlapFound)
+	{
+		// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ APlayerCharacter Å¸ï¿½Ô¸ï¿½ ï¿½ï¿½ï¿½Í¸ï¿½
+		for (const FOverlapResult& Overlap : OverlapResults)
+		{
+			APlayerCharacter* PlayerChar = Cast<APlayerCharacter>(Overlap.GetActor());
+			if (PlayerChar && PlayerChar != this)
+			{
+				// ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ì¶ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½ï¿½
+				// if (PlayerChar->GetTeam() != GetTeam()) 
+				// {
+				FoundTargets.Add(PlayerChar);
+				// }
+			}
+		}
+	}
+
+	return FoundTargets;
+}
+
+APlayerCharacter* APlayerCharacter::SelectBestTarget(const TArray<APlayerCharacter*>& PotentialTargets)
+{
+	if (PotentialTargets.Num() == 0)
+	{
+		return nullptr;
+	}
+
+	// Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½:
+	// 1. ï¿½ì¼±ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½ ï¿½Ã¾ß°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ ï¿½ï¿½
+	// 2. ï¿½ï¿½ï¿½ï¿½Ã¥: ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½
+
+	APlayerCharacter* BestTarget = nullptr;
+	float BestScore = -1.0f;
+
+	FVector Forward = GetActorForwardVector();
+	FVector ActorLocation = GetActorLocation();
+
+	const float ViewAngleCos = FMath::Cos(FMath::DegreesToRadians(60.0f)); // 60ï¿½ï¿½ ï¿½Ã¾ß°ï¿½
+	const float ViewAngleWeight = 2.0f; // ï¿½Ã¾ß°ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ä¡
+
+	for (APlayerCharacter* Target : PotentialTargets)
+	{
+		if (!Target){continue;}
+
+		FVector ToTarget = Target->GetActorLocation() - ActorLocation;
+		float Distance = ToTarget.Size();
+		
+		float DistanceScore = 1.0f / FMath::Max(Distance, 1.0f); // ï¿½Å¸ï¿½ï¿½ï¿½ ï¿½Ö¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½)
+		
+		ToTarget.Normalize(); // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½È­
+
+		float DotProduct = FVector::DotProduct(Forward, ToTarget); // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Í¿ï¿½ Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
+
+		float AngleScore = DotProduct > ViewAngleCos ? ViewAngleWeight : 1.0f; // ï¿½Ã¾ß°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö´ï¿½ï¿½ï¿½ È®ï¿½ï¿½ (DotProduct > ViewAngleCosï¿½ï¿½ ï¿½Ã¾ß°ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
+
+		float FinalScore = DistanceScore * AngleScore; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
+
+		// ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½
+		if (FinalScore > BestScore)
+		{
+			BestScore = FinalScore;
+			BestTarget = Target;
+		}
+	}
+	return BestTarget;
+}

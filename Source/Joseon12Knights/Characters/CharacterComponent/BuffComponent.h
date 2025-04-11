@@ -45,6 +45,10 @@ struct FBuffInfo
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buff")
 	float DamageOverTimePercent;
 
+	// 공격자를 기준으로 한 공격력 (도트 데미지 계산용)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Buff")
+	float SourceAttackValue;
+
 	// 내부 타이머: 경과 시간
 	float ElapsedTime;
 
@@ -55,6 +59,7 @@ struct FBuffInfo
 		, DefenseMultiplier(1.f)
 		, MoveSpeedMultiplier(1.f)
 		, DamageOverTimePercent(0.f)
+		, SourceAttackValue(0.f)
 		, ElapsedTime(0.f)
 	{}
 };
