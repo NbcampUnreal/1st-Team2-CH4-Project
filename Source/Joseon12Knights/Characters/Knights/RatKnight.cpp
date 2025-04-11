@@ -298,7 +298,16 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 			PoisonDebuff.Duration = 4.0f;
 			PoisonDebuff.DamageOverTimePercent = 0.05f; // 초당 5% 공격력에 해당하는 도트 효과
 			TargetBuffComp->AddBuff(PoisonDebuff);
+
+			// 독 데미지는 스킬 사용자의 공격력에 기반하므로, 공격자(=this)의 StatComponent에서 값을 가져와 저장
+			if (this->GetStatComponent())
+			{
+				PoisonDebuff.SourceAttackValue = this->GetStatComponent()->GetAttack();
+			}
+
+			TargetBuffComp->AddBuff(PoisonDebuff);
 		}
+
 		UE_LOG(LogTemp, Warning, TEXT("RatKnight 궁극기 타격 성공!"));
 
 		// 타겟 위치에서 이펙트 재생 (독 또는 출혈)

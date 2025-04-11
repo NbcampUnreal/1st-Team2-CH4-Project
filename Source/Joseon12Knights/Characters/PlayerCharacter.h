@@ -163,4 +163,8 @@ public:
 	APlayerCharacter* GetTargetPlayer();
 	TArray<APlayerCharacter*> FindTargetsInRadius(const FVector& Origin, float Radius);
 	APlayerCharacter* SelectBestTarget(const TArray<APlayerCharacter*>& PotentialTargets);
+
+public:
+	UFUNCTION(BlueprintCallable, Category = "Component")
+	UStatComponent* GetStatComponent() const { return StatComponent; }
 };
