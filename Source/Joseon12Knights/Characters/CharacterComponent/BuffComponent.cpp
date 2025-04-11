@@ -19,6 +19,8 @@ void UBuffComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 void UBuffComponent::AddBuff(const FBuffInfo& NewBuff)
 {
 	ActiveBuffs.Add(NewBuff);
+
+	UE_LOG(LogTemp, Warning, TEXT("Buff Added: Type=%d, Duration=%.2f"), (int32)NewBuff.BuffType, NewBuff.Duration);
 }
 
 void UBuffComponent::RemoveBuff(EBuffType BuffType)
@@ -27,6 +29,7 @@ void UBuffComponent::RemoveBuff(EBuffType BuffType)
 		{
 			return Buff.BuffType == BuffType;
 		});
+	UE_LOG(LogTemp, Warning, TEXT("Buff Removed: Type=%d"), (int32)BuffType);
 }
 
 void UBuffComponent::UpdateBuffs(float DeltaTime)
@@ -37,6 +40,7 @@ void UBuffComponent::UpdateBuffs(float DeltaTime)
 		ActiveBuffs[i].ElapsedTime += DeltaTime;
 		if (ActiveBuffs[i].ElapsedTime >= ActiveBuffs[i].Duration)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("Buff Expired: Type=%d"), (int32)ActiveBuffs[i].BuffType);
 			ActiveBuffs.RemoveAt(i);
 		}
 	}

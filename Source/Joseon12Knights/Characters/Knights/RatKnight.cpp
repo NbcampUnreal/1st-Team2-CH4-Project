@@ -26,12 +26,6 @@ void ARatKnight::BeginPlay()
 	}
 }
 
-APlayerCharacter* ARatKnight::GetTargetPlayer()
-{
-	// TODO: 타겟팅 로직 구현 필요 (라인트레이스? 콜리전?)
-	return nullptr; // 임시로 널 반환
-}
-
 // ====================
 // RatKnight W Skill Logic
 // ====================
@@ -60,7 +54,7 @@ void ARatKnight::Skill(const FInputActionValue& Value)
 	APlayerCharacter* Target = GetTargetPlayer();
 	if (Target)
 	{
-		if (UBuffComponent* TargetBuffComp = FindComponentByClass<UBuffComponent>())
+		if (UBuffComponent* TargetBuffComp = Target -> FindComponentByClass<UBuffComponent>()) // 타겟에게 디버프 적용...!
 		{
 			FBuffInfo SlowDebuff;
 			SlowDebuff.BuffType = EBuffType::Slow;
@@ -76,7 +70,7 @@ void ARatKnight::Skill(const FInputActionValue& Value)
 	}
 
 	// 2) 쥐기사 본인에게 은신 효과 적용 (5초간 은신)
-	if (UBuffComponent* SelfBuffComp = FindComponentByClass<UBuffComponent>())
+	if (UBuffComponent* SelfBuffComp = FindComponentByClass<UBuffComponent>()) // 쥐기사 본인에게 은신 효과 적용
 	{
 		FBuffInfo StealthBuff;
 		StealthBuff.BuffType = EBuffType::Stealth;
@@ -287,11 +281,17 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 		AnimInstance->Montage_Play(UltimateMontage);
 	}
 
+	// R키 입력 시 캐릭터를 살짝 공중으로 띄우기
+	const float UltimateLaunchForce = 500.0f; // 상승력(?)
+	const FVector LauchVelocity(0.0f, 0.0f, UltimateLaunchForce);
+	LaunchCharacter(LauchVelocity, false, true); // bXYOverride = false (XY 속도 유지), bZOverride = true (Z축 속도 강제 적용)
+
+
 	// 타격한 상대에게 독 디버프 적용 (초당 공격력 5% 추가 피해, 4초 지속)
 	APlayerCharacter* Target = GetTargetPlayer();
 	if (Target) 
 	{
-		if (UBuffComponent* TargetBuffComp = FindComponentByClass<UBuffComponent>())
+		if (UBuffComponent* TargetBuffComp = Target -> FindComponentByClass<UBuffComponent>()) // 타겟에게 디버프 적용
 		{
 			FBuffInfo PoisonDebuff;
 			PoisonDebuff.BuffType = EBuffType::Poison;
@@ -300,6 +300,17 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 			TargetBuffComp->AddBuff(PoisonDebuff);
 		}
 		UE_LOG(LogTemp, Warning, TEXT("RatKnight 궁극기 타격 성공!"));
+
+		// 타겟 위치에서 이펙트 재생 (독 또는 출혈)
+		if (RatPoisonNiagaraEffect) 
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				RatPoisonNiagaraEffect,
+				Target->GetActorLocation(),
+				Target->GetActorRotation()
+			);
+		}
 	}
 	else
 	{
