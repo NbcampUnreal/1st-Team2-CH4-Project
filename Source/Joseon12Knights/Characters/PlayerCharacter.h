@@ -54,6 +54,9 @@ protected:
 	bool bIsDoubleJump;
 	virtual void BeginPlay() override;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bIsHit;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float MoveSpeed;
 
@@ -67,13 +70,7 @@ protected:
 	UAnimMontage* SkillAttackMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	UAnimMontage* GuardMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimMontage* UltimateMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	UAnimMontage* DashMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
 	UCameraComponent* Camera;
@@ -101,6 +98,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
 	UStatComponent* StatComponent;
+	
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Animation")
+	TMap<FString, UAnimMontage*> MapAnim;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -130,7 +131,11 @@ public:
 	void StopJump(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void Roll(const FInputActionValue& Value);
+	void Dash(const FInputActionValue& Value);
+	UFUNCTION(Server, Unreliable)
+	void ServerDash();
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastDash();
 
 	UFUNCTION()
 	void Guard(const FInputActionValue& Value);

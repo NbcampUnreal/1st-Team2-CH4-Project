@@ -11,17 +11,32 @@
 
 
 // Sets default values
-APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage(nullptr), UltimateMontage(nullptr), DashMontage(nullptr)
+APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMontage(nullptr)
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	
+	TMap<FString, FString> MapAnimNamePath;
 
+	MapAnimNamePath.Add("Hit", "/Game/ModularAnimalKnightsPolyart/Animations/AM_GetHitAnim.AM_GetHitAnim");
+	MapAnimNamePath.Add("Death", "/Game/ModularAnimalKnightsPolyart/Animations/AM_Die.AM_Die");
+	MapAnimNamePath.Add("Guard", "/Game/ModularAnimalKnightsPolyart/Animations/AM_Defend.AM_Defend");
+	MapAnimNamePath.Add("GuardHit", "/Game/ModularAnimalKnightsPolyart/Animations/AM_DefendHit.AM_DefendHit");
+	MapAnimNamePath.Add("Dash", "/Game/ModularAnimalKnightsPolyart/Animations/AM_DashForward.AM_DashForward");
+
+	for (const TPair<FString, FString>& Entry : MapAnimNamePath)
+	{
+		FStringAssetReference AssetRef(Entry.Value);
+		UAnimMontage* LoadedMontage = LoadObject<UAnimMontage>(nullptr, *Entry.Value);
+		if (LoadedMontage)
+		{
+			MapAnim.Add(Entry.Key, LoadedMontage);
+		}
+	}
 	MoveSpeed = 50.f;
 	DashDistance = 2000.f;
 	JumpMaxCount = 2;
 
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("/Game/ModularAnimalKnightsPolyart/Meshes/OneMeshCharacter/RabitSK.RabitSK"));
-	///Game/ModularAnimalKnightsPolyart/Meshes/OneMeshCharacter/RabitSK.RabitSK
 
 	if (MeshAsset.Succeeded())
 	{
@@ -59,7 +74,6 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 	ShieldComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 
 	UCapsuleComponent* Capsule = GetCapsuleComponent();
-	
 	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	Capsule->SetCollisionObjectType(ECC_Pawn); 
 	Capsule->SetCollisionResponseToAllChannels(ECR_Ignore);
@@ -69,7 +83,6 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 	Capsule->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	Capsule->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Overlap);
 	Capsule->CanCharacterStepUpOn = ECB_No;
-
 	Capsule->ComponentTags.Add("Player");
 
 	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
@@ -84,24 +97,11 @@ void APlayerCharacter::Test()
 
 void APlayerCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	//if (OtherActor == this) return;
 
-	//if (OtherComp && OtherComp->ComponentHasTag("Player"))
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
-	//}
 }
 
 void APlayerCharacter::OnWeaponOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	//if (OtherActor == this) return;
-
-	//if (OtherComp && OtherComp->ComponentHasTag("Player"))
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
-	//}
-	
-
 	if (OtherActor == this) return;
 
 	if (APlayerCharacter* EnemyCharacter = Cast<APlayerCharacter>(OtherActor))
@@ -119,7 +119,6 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 
 	FVector Direction = DamageCauser->GetActorLocation() - GetActorLocation();
 
-	//FVector Direction = GetMesh()->GetRightVector() * DashDistance;
 	LaunchCharacter(-Direction.GetSafeNormal() * KnockBackDistance, true, false);
 
 	return 0.0f;
@@ -189,7 +188,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 					PlayerController->RollAction,
 					ETriggerEvent::Started,
 					this,
-					&APlayerCharacter::Roll
+					&APlayerCharacter::Dash
 				);
 			}
 
@@ -293,20 +292,44 @@ void APlayerCharacter::StopJump(const FInputActionValue& Value)
 	}
 }
 
-void APlayerCharacter::Roll(const FInputActionValue& Value)
+void APlayerCharacter::Dash(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ROLL"));
+	/*if (UCharacterMovementComponent* MoveComp = Cast<UCharacterMovementComponent>(GetMovementComponent()))
+	{
+		if (!MoveComp->IsFalling())
+		{
+			UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
+			if (AnimInstance && MapAnim["Dash"] && !AnimInstance->Montage_IsPlaying(MapAnim["Dash"]))
+			{
+				AnimInstance->StopAllMontages(1);
+				AnimInstance->Montage_Play(MapAnim["Dash"]);
+			}
+
+			FVector Direction = GetMesh()->GetRightVector() * DashDistance;
+			LaunchCharacter(Direction, true, false);
+		}
+	}*/
+	ServerDash();
+}
+
+void APlayerCharacter::ServerDash_Implementation()
+{
+	MulticastDash();
+}
+
+void APlayerCharacter::MulticastDash_Implementation()
+{
 	if (UCharacterMovementComponent* MoveComp = Cast<UCharacterMovementComponent>(GetMovementComponent()))
 	{
 		if (!MoveComp->IsFalling())
 		{
 			UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-			if (AnimInstance && DashMontage && !AnimInstance->Montage_IsPlaying(DashMontage))
+			if (AnimInstance && MapAnim["Dash"] && !AnimInstance->Montage_IsPlaying(MapAnim["Dash"]))
 			{
 				AnimInstance->StopAllMontages(1);
-				AnimInstance->Montage_Play(DashMontage);
+				AnimInstance->Montage_Play(MapAnim["Dash"]);
 			}
 
 			FVector Direction = GetMesh()->GetRightVector() * DashDistance;
@@ -329,10 +352,12 @@ void APlayerCharacter::Guard(const FInputActionValue& Value)
 
 		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-		if (AnimInstance && GuardMontage && !AnimInstance->Montage_IsPlaying(GuardMontage))
+		UAnimMontage* AM = MapAnim["Guard"];
+
+		if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
 		{
 			AnimInstance->StopAllMontages(1);
-			AnimInstance->Montage_Play(GuardMontage);
+			AnimInstance->Montage_Play(AM);
 		}
 
 		bIsGuarding = true;
@@ -347,9 +372,11 @@ void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-	if (AnimInstance && GuardMontage && !AnimInstance->Montage_IsPlaying(GuardMontage))
+	UAnimMontage* AM = MapAnim["Guard"];
+
+	if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
 	{
-		AnimInstance->Montage_Stop(0.1f, GuardMontage);
+		AnimInstance->Montage_Stop(0.1f, AM);
 	}
 }
 
@@ -378,7 +405,6 @@ void APlayerCharacter::MulticastAttack_Implementation()
 		AnimInstance->Montage_Play(NormalAttackMontage);
 	}
 
-	// 사운드 재생
 	if (NormalAttackSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, NormalAttackSound, GetActorLocation());
