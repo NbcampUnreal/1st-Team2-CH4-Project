@@ -37,20 +37,20 @@ void ATigerKnight::Skill(const FInputActionValue& Value)
 		FBuffInfo SpeedBuff;
 		// 만약 별도의 타입을 사용하고 싶다면 EBuffType::SpeedBuff를 추가하고 사용.
 		SpeedBuff.BuffType = EBuffType::AttackBuff;
-		SpeedBuff.MoveSpeedMultiplier = 1.3f; // +30% 이동속도
+		SpeedBuff.MoveSpeedMultiplier = 2.0f; // +30% 이동속도
 		SpeedBuff.Duration = 5.0f;
 		BuffComp->AddBuff(SpeedBuff);
 
 		UE_LOG(LogTemp, Warning, TEXT("TigerKnight W Skill Succeed!"));
 	}
 
-	// 쿨다운 시작 (예: 4초)
+	// 쿨다운 시작
 	bCanUseSkill = false;  
 	GetWorldTimerManager().SetTimer(SkillCooldownTimerHandle, [this]()
 		{
 			bCanUseSkill = true;
 			UE_LOG(LogTemp, Warning, TEXT("TigerKnight W Skill is available"));
-		}, 4.0f, false);
+		}, 7.0f, false);
 
 	if (TigerSkill1Effect)
 	{
