@@ -26,142 +26,6 @@ void ARatKnight::BeginPlay()
 	}
 }
 
-// ======================
-// RatKnight Targeting Logic
-// ======================
-APlayerCharacter* ARatKnight::GetTargetPlayer()
-{
-	FVector AttackOrigin; // 공격 시작 지점
-
-	// 무기가 있으면 무기 위치를 기준으로 설정
-	if (WeaponComponent && WeaponComponent->DoesSocketExist(FName("WeaponSocket")))
-	{
-		AttackOrigin = WeaponComponent->GetSocketLocation(FName("WeaponSocket"));
-	}
-	// 없으면 캐릭터 전방에 오프셋 적용
-	else
-	{
-		AttackOrigin = GetActorLocation() + GetActorForwardVector() * ForwardOffset;
-	}
-
-	// 공격 범위 내의 모든 캐릭터를 찾기
-	TArray<APlayerCharacter*> PotentialTargets = FindTargetsInRadius(AttackOrigin, AttackRadius);
-
-	// 가장 적합한 타겟 선택
-	APlayerCharacter* BestTarget = SelectBestTarget(PotentialTargets);
-
-	// 디버그 시각화
-	if (bDebugTargeting)
-	{
-		// 공격 반경 시각화
-		DrawDebugSphere(GetWorld(), AttackOrigin, AttackRadius, 24,
-			BestTarget ? FColor::Green : FColor::Red, false, 1.0f);
-
-		// 선택된 타겟 표시
-		if (BestTarget)
-		{
-			DrawDebugLine(GetWorld(), AttackOrigin, BestTarget->GetActorLocation(),
-				FColor::Yellow, false, 1.0f, 0, 2.0f);
-		}
-	}
-
-	return BestTarget; // 임시로 널 반환
-}
-
-TArray<APlayerCharacter*> ARatKnight::FindTargetsInRadius(const FVector& Origin, float Radius)
-{
-	TArray<APlayerCharacter*> FoundTargets;
-	TArray<FOverlapResult> OverlapResults;
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this); // 자신은 제외
-
-	// 구체 오버랩 검사 수행
-	bool bOverlapFound = GetWorld()->OverlapMultiByObjectType(
-		OverlapResults,
-		Origin,
-		FQuat::Identity,
-		FCollisionObjectQueryParams(TargetCollisionChannel), // 설정한 채널에 따라 감지
-		FCollisionShape::MakeSphere(Radius),
-		QueryParams
-	);
-
-	if (bOverlapFound)
-	{
-		// 결과에서 APlayerCharacter 타입만 필터링
-		for (const FOverlapResult& Overlap : OverlapResults)
-		{
-			APlayerCharacter* PlayerChar = Cast<APlayerCharacter>(Overlap.GetActor());
-			if (PlayerChar && PlayerChar != this)
-			{
-				// 팀 기반 게임이라면 적 팀만 타겟팅하도록 필터링 가능
-				// if (PlayerChar->GetTeam() != GetTeam()) 
-				// {
-				FoundTargets.Add(PlayerChar);
-				// }
-			}
-		}
-	}
-
-	return FoundTargets;
-}
-
-APlayerCharacter* ARatKnight::SelectBestTarget(const TArray<APlayerCharacter*>& PotentialTargets)
-{
-	if (PotentialTargets.Num() == 0)
-	{
-		return nullptr;
-	}
-
-	// 타겟 선택 로직:
-	// 1. 우선순위: 전방 시야각 내에 있는 적
-	// 2. 차선책: 가장 가까운 적
-
-	APlayerCharacter* BestTarget = nullptr;
-	float BestScore = -1.0f;
-
-	FVector Forward = GetActorForwardVector();
-	FVector ActorLocation = GetActorLocation();
-
-	const float ViewAngleCos = FMath::Cos(FMath::DegreesToRadians(60.0f)); // 60도 시야각
-	const float ViewAngleWeight = 2.0f; // 시야각 내 대상 가중치
-
-	for (APlayerCharacter* Target : PotentialTargets)
-	{
-		if (!Target)
-		{
-			continue;
-		}
-
-		FVector ToTarget = Target->GetActorLocation() - ActorLocation;
-		float Distance = ToTarget.Size();
-
-		// 거리가 멀수록 점수 감소 (역수 사용)
-		float DistanceScore = 1.0f / FMath::Max(Distance, 1.0f);
-
-		// 방향 정규화
-		ToTarget.Normalize();
-
-		// 전방 벡터와 타겟 방향 사이의 각도 계산 (내적 사용)
-		float DotProduct = FVector::DotProduct(Forward, ToTarget);
-
-		// 시야각 내에 있는지 확인 (DotProduct > ViewAngleCos면 시야각 내에 있음)
-		float AngleScore = DotProduct > ViewAngleCos ? ViewAngleWeight : 1.0f;
-
-		// 최종 점수 계산
-		float FinalScore = DistanceScore * AngleScore;
-
-		// 더 높은 점수의 타겟이면 갱신
-		if (FinalScore > BestScore)
-		{
-			BestScore = FinalScore;
-			BestTarget = Target;
-		}
-	}
-
-	return BestTarget;
-}
-
-
 // ====================
 // RatKnight W Skill Logic
 // ====================
@@ -190,7 +54,7 @@ void ARatKnight::Skill(const FInputActionValue& Value)
 	APlayerCharacter* Target = GetTargetPlayer();
 	if (Target)
 	{
-		if (UBuffComponent* TargetBuffComp = FindComponentByClass<UBuffComponent>())
+		if (UBuffComponent* TargetBuffComp = Target -> FindComponentByClass<UBuffComponent>()) // 타겟에게 디버프 적용...!
 		{
 			FBuffInfo SlowDebuff;
 			SlowDebuff.BuffType = EBuffType::Slow;
@@ -206,7 +70,7 @@ void ARatKnight::Skill(const FInputActionValue& Value)
 	}
 
 	// 2) 쥐기사 본인에게 은신 효과 적용 (5초간 은신)
-	if (UBuffComponent* SelfBuffComp = FindComponentByClass<UBuffComponent>())
+	if (UBuffComponent* SelfBuffComp = FindComponentByClass<UBuffComponent>()) // 쥐기사 본인에게 은신 효과 적용
 	{
 		FBuffInfo StealthBuff;
 		StealthBuff.BuffType = EBuffType::Stealth;
@@ -427,7 +291,7 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 	APlayerCharacter* Target = GetTargetPlayer();
 	if (Target) 
 	{
-		if (UBuffComponent* TargetBuffComp = FindComponentByClass<UBuffComponent>())
+		if (UBuffComponent* TargetBuffComp = Target -> FindComponentByClass<UBuffComponent>()) // 타겟에게 디버프 적용
 		{
 			FBuffInfo PoisonDebuff;
 			PoisonDebuff.BuffType = EBuffType::Poison;
@@ -436,6 +300,17 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 			TargetBuffComp->AddBuff(PoisonDebuff);
 		}
 		UE_LOG(LogTemp, Warning, TEXT("RatKnight 궁극기 타격 성공!"));
+
+		// 타겟 위치에서 이펙트 재생 (독 또는 출혈)
+		if (RatPoisonNiagaraEffect) 
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				GetWorld(),
+				RatPoisonNiagaraEffect,
+				Target->GetActorLocation(),
+				Target->GetActorRotation()
+			);
+		}
 	}
 	else
 	{
