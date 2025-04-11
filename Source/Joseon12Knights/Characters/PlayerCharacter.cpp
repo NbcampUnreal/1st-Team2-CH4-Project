@@ -52,8 +52,6 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 
 	WeaponComponent->SetRelativeRotation(FRotator(0.f, 0.f, -180.f));
 
-	WeaponComponent->ComponentTags.Add("Weapon");
-
 	ShieldComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Shield"));
 	ShieldComponent->SetupAttachment(GetMesh(), FName("ShieldSocket"));
 
@@ -72,27 +70,57 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 	Capsule->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Overlap);
 	Capsule->CanCharacterStepUpOn = ECB_No;
 
+	Capsule->ComponentTags.Add("Player");
+
 	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
 	StatComponent = CreateDefaultSubobject<UStatComponent>(TEXT("StatComponent"));
 
 }
 
+void APlayerCharacter::Test()
+{
+	UE_LOG(LogTemp, Warning, TEXT("TEST : %s"), *GetName());
+}
+
 void APlayerCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	//if (OtherActor == this) return;
+
+	//if (OtherComp && OtherComp->ComponentHasTag("Player"))
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
+	//}
+}
+
+void APlayerCharacter::OnWeaponOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	//if (OtherActor == this) return;
+
+	//if (OtherComp && OtherComp->ComponentHasTag("Player"))
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
+	//}
+	
+
 	if (OtherActor == this) return;
 
-	if (OtherComp && OtherComp->ComponentHasTag("Weapon"))
+	if (APlayerCharacter* EnemyCharacter = Cast<APlayerCharacter>(OtherActor))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
+		
+		UGameplayStatics::ApplyDamage(EnemyCharacter, 50.f, GetController(), this, UDamageType::StaticClass());
 	}
 }
 
 float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Take Damage"));
 	float KnockBackDistance = bIsGuarding ? 500.f : 1000.f;
 
-	FVector Direction = GetMesh()->GetRightVector() * DashDistance;
-	LaunchCharacter(Direction, true, false);
+	FVector Direction = DamageCauser->GetActorLocation() - GetActorLocation();
+
+	//FVector Direction = GetMesh()->GetRightVector() * DashDistance;
+	LaunchCharacter(-Direction.GetSafeNormal() * KnockBackDistance, true, false);
 
 	return 0.0f;
 }
@@ -101,6 +129,7 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnCapsuleOverlap);
+	WeaponComponent->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnWeaponOverlap);
 }
 
 void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
