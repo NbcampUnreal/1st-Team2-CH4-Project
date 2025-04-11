@@ -38,10 +38,20 @@ public:
 	UGI_GameCoreInstance();
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TSoftObjectPtr<UWorld> SelectedMap;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	EPlayMode SelectedPlayMode;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FString SelectedCharacterID;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	int32 SelectedCpuCount = 0;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TArray<FString> CpuCharacterIDs;
+
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FString SelectedMapName;

@@ -6,6 +6,11 @@
 #include "GS_FighterState.h"
 #include "GM_SingleMode.h"
 #include "GM_LobbyMode.h"
+#include "CP_UIController.h"
+#include "HUD_MapSelect.h"
+#include "HUD_PressStart.h"
+#include "HUD_CharacterSelect.h"
+#include "HUD_CharacterStory.h"
 #include "GI_GameCoreInstance.h"
 #include "PC_MenuController.generated.h"
 
@@ -15,30 +20,11 @@ class JOSEON12KNIGHTS_API APC_MenuController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	UFUNCTION(BlueprintCallable)
+	void HandleBackToCharacterSelect();
+
+	UFUNCTION(BlueprintCallable)
 	void HandleBackToMainMenu();
-protected:
-	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaSeconds) override;
-	virtual void SetupInputComponent() override;
-
-	void CheckAndShowUI();
-	void OnPressStart();
-
-	bool bModeUIShown = false;
-	bool bCharacterUIShown = false;
-	bool bPressStartUIShown = false;
-
-	AGS_FighterState* GetGS() const;
-	UGI_GameCoreInstance* GetGI() const;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
-	TSubclassOf<UUserWidget> PressStartWidgetClass;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
-	TSubclassOf<UUserWidget> ModeSelectWidgetClass;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
-	TSubclassOf<UUserWidget> CharacterSelectWidgetClass;
 
 	UFUNCTION(BlueprintCallable)
 	void SelectCharacter(const FString& CharacterID);
@@ -47,8 +33,27 @@ protected:
 	void SelectVS();
 
 	UFUNCTION(BlueprintCallable)
+	void SelectArcade();
+
+	UFUNCTION(BlueprintCallable)
 	void OnCharacterSelectConfirmed(int32 NumAI);
 
+protected:
+	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
+	virtual void SetupInputComponent() override;
 
-	UUserWidget* CurrentWidget;
+	void OnGameStartPressed();
+	void OnPressStartPressed();
+	void OnCharacterSelectEnterPressed();
+	void OnCharacterStoryEnterPressed();
+
+	AGS_FighterState* GetGS() const;
+	UGI_GameCoreInstance* GetGI() const;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UCP_UIController> UIControllerClass;
+
+	UPROPERTY()
+	UCP_UIController* UIController;
 };
