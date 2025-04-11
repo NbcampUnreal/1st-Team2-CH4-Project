@@ -10,6 +10,7 @@
 #include "HUD_MapSelect.h"
 #include "HUD_PressStart.h"
 #include "HUD_CharacterSelect.h"
+#include "HUD_CharacterStory.h"
 #include "GI_GameCoreInstance.h"
 #include "PC_MenuController.generated.h"
 
@@ -32,6 +33,9 @@ public:
 	void SelectVS();
 
 	UFUNCTION(BlueprintCallable)
+	void SelectArcade();
+
+	UFUNCTION(BlueprintCallable)
 	void OnCharacterSelectConfirmed(int32 NumAI);
 
 protected:
@@ -42,6 +46,7 @@ protected:
 	void OnGameStartPressed();
 	void OnPressStartPressed();
 	void OnCharacterSelectEnterPressed();
+	void OnCharacterStoryEnterPressed();
 
 	AGS_FighterState* GetGS() const;
 	UGI_GameCoreInstance* GetGI() const;

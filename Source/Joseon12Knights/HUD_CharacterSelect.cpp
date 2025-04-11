@@ -135,12 +135,21 @@ void UHUD_CharacterSelect::NotifyCharacterSelected(const FString& CharacterID, i
         }
     }
 
+    if (CharacterSelectSounds.Contains(CharacterID))
+    {
+        USoundBase* Sound = CharacterSelectSounds[CharacterID];
+        if (Sound)
+        {
+            UGameplayStatics::PlaySound2D(this, Sound);
+        }
+    }
+
     int32 LocalPlayerIndex = 0;
     if (APlayerController* PC = GetOwningPlayer())
     {
         if (ULocalPlayer* LP = PC->GetLocalPlayer())
         {
-            LocalPlayerIndex = LP->GetControllerId(); 
+            LocalPlayerIndex = LP->GetControllerId();
         }
     }
 
@@ -150,6 +159,7 @@ void UHUD_CharacterSelect::NotifyCharacterSelected(const FString& CharacterID, i
         bPressStartPlayed = true;
     }
 }
+
 
 
 void UHUD_CharacterSelect::OnCpuUp()
@@ -192,6 +202,16 @@ void UHUD_CharacterSelect::OnCpuUp()
             }
         }
     }
+
+    else
+    {
+        if (BlockedSound)
+        {
+            UGameplayStatics::PlaySound2D(this, BlockedSound);
+        }
+        return;
+    }
+
 }
 
 
@@ -230,6 +250,15 @@ void UHUD_CharacterSelect::OnCpuDown()
         }
 
 
+    }
+
+    else
+    {
+        if (BlockedSound)
+        {
+            UGameplayStatics::PlaySound2D(this, BlockedSound);
+        }
+        return;
     }
 }
 

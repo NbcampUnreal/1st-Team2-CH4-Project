@@ -5,6 +5,7 @@
 #include "GS_FighterState.h" 
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
+#include "Kismet/GameplayStatics.h"
 #include "HUD_CharacterSelect.generated.h"
 
 class UHUD_CharacterSelectTile;
@@ -33,6 +34,8 @@ protected:
 
     TMap<FString, TArray<int32>> CharacterSelections;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+    USoundBase* BlockedSound;
 
     UPROPERTY(meta = (BindWidget)) UTextBlock* PressStart;
 
@@ -87,6 +90,10 @@ protected:
     FString GetAvailableRandomID();
 
     void ApplyCpuCharacterToPanel(int32 CpuIndex, const FString& ID);
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+    TMap<FString, USoundBase*> CharacterSelectSounds;
+
 
     UFUNCTION()
     void OnBackClicked();

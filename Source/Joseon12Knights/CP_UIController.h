@@ -11,6 +11,7 @@ enum class EUIScreen : uint8
 	MainMenu,
 	CharacterSelect,
 	MapSelect,
+	CharacterStory,
 	Result
 };
 
@@ -42,6 +43,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UUserWidget> MapSelectClass;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> CharacterStoryClass;
+
 
 private:
 	UPROPERTY()

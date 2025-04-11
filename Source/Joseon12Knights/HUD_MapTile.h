@@ -39,6 +39,9 @@ public:
     // 선택 시 상태 적용
     void SetSelected(bool bSelected);
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+    USoundBase* SelectSound;
+
     // 타일 ID (선택적 정보)
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 TileID = 0;

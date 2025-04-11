@@ -5,11 +5,13 @@
 #include "Animation/WidgetAnimation.h"
 #include "Components/TextBlock.h"
 #include "Blueprint/UserWidget.h"
+#include "HUD_CharacterStory.h"
 #include "HUD_CharacterSelectTile.generated.h"
 
 class UHUD_CharacterSelectPanel;
 class UTextBlock;
 class UButton;
+class APC_MenuController;
 
 UCLASS()
 class JOSEON12KNIGHTS_API UHUD_CharacterSelectTile : public UUserWidget
@@ -62,7 +64,6 @@ protected:
 
     void StartShake();
     void TickShake();
-
 
     UFUNCTION()
     void HandleClicked();

@@ -4,6 +4,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
 #include "Components/Button.h"
+#include "PC_MenuController.h"
 
 void UHUD_CharacterSelectTile::NativeConstruct()
 {
@@ -49,28 +50,25 @@ void UHUD_CharacterSelectTile::HandleClicked()
 
     if (CharacterID == "5" || CharacterID == "6" || CharacterID == "7" || CharacterID == "8")
     {
-        // 잠금 캐릭터: 흔들기만 실행하고 리턴
         StartShake();
         return;
     }
 
-    // 한글 이름 추출
     FString FinalCharacterName = CharacterNameMap.Contains(CharacterID)
         ? CharacterNameMap[CharacterID]
         : CharacterID;
 
-        // 컨트롤러 인덱스로 Player ID 텍스트 구함
         int32 ControllerId = 0;
         if (APlayerController* PC = GetOwningPlayer())
         {
             if (ULocalPlayer* LP = PC->GetLocalPlayer())
             {
-                ControllerId = LP->GetControllerId(); // 0~3
+                ControllerId = LP->GetControllerId();
             }
         }
+
         FString PlayerIDText = FString::Printf(TEXT("%d"), ControllerId + 1);
 
-        // 패널 표시
         switch (ControllerId)
         {
         case 0: if (Panel1) Panel1->SetCharacter(FinalCharacterName, PlayerIDText); break;
@@ -79,21 +77,24 @@ void UHUD_CharacterSelectTile::HandleClicked()
         case 3: if (Panel4) Panel4->SetCharacter(FinalCharacterName, PlayerIDText); break;
         }
 
-        // HUD에 선택 알림
-        if (UHUD_CharacterSelect* ParentHUD = GetTypedOuter<UHUD_CharacterSelect>())
+        if (UHUD_CharacterSelect* SelectHUD = GetTypedOuter<UHUD_CharacterSelect>())
         {
-            ParentHUD->NotifyCharacterSelected(CharacterID, ControllerId);
+            SelectHUD->NotifyCharacterSelected(CharacterID, ControllerId);
+        }
+        else if (UHUD_CharacterStory* StoryHUD = GetTypedOuter<UHUD_CharacterStory>())
+        {
+            StoryHUD->NotifyCharacterSelected(CharacterID, ControllerId);
+        }
 
-            // 여기 추가: 선택된 캐릭터 ID를 GameInstance에 전달
-            if (APlayerController* PC = GetOwningPlayer())
+        if (APlayerController* PC = GetOwningPlayer())
+        {
+            if (APC_MenuController* MenuPC = Cast<APC_MenuController>(PC))
             {
-                if (APC_MenuController* MenuPC = Cast<APC_MenuController>(PC))
-                {
-                    MenuPC->SelectCharacter(CharacterID);
-                }
+                MenuPC->SelectCharacter(CharacterID);
             }
         }
 }
+
 
 
 
@@ -128,12 +129,12 @@ void UHUD_CharacterSelectTile::UpdateSelectionIndicators(const TMap<FString, TAr
                     BorderP4->SetVisibility(ESlateVisibility::Visible);
                 break;
             default:
-                UE_LOG(LogTemp, Warning, TEXT("Unknown player index: %d"), Index);
                 break;
             }
         }
     }
 }
+
 
 
 void UHUD_CharacterSelectTile::StartShake()

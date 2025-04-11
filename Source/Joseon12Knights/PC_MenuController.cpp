@@ -10,13 +10,8 @@ void APC_MenuController::BeginPlay()
 	{
 		UIController->Initialize(this);
 		UIController->ShowUI(EUIScreen::PressStart);
+	}
 
-		UE_LOG(LogTemp, Warning, TEXT("🎯 UIController 인스턴스: %s"), *UIController->GetClass()->GetName());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("❌ UIController 생성 실패"));
-	}
 }
 
 void APC_MenuController::Tick(float DeltaSeconds)
@@ -33,7 +28,7 @@ void APC_MenuController::SetupInputComponent()
 		InputComponent->BindAction("GameStart", IE_Pressed, this, &APC_MenuController::OnGameStartPressed);
 		InputComponent->BindAction("PressStart", IE_Pressed, this, &APC_MenuController::OnPressStartPressed);
 		InputComponent->BindAction("GameEnter", IE_Pressed, this, &APC_MenuController::OnCharacterSelectEnterPressed);
-
+		InputComponent->BindAction("StoryEnter", IE_Pressed, this, &APC_MenuController::OnCharacterStoryEnterPressed);
 	}
 }
 
@@ -79,6 +74,15 @@ void APC_MenuController::OnCharacterSelectEnterPressed()
 	}
 }
 
+void APC_MenuController::OnCharacterStoryEnterPressed()
+{
+	if (!UIController || !UIController->GetCurrentWidget()) return;
+
+	if (UHUD_CharacterStory* StoryUI = Cast<UHUD_CharacterStory>(UIController->GetCurrentWidget()))
+	{
+		StoryUI->ConfirmSelection();
+	}
+}
 
 
 void APC_MenuController::SelectCharacter(const FString& CharacterID)
@@ -108,6 +112,26 @@ void APC_MenuController::SelectVS()
 		UIController->ShowUI(EUIScreen::CharacterSelect);
 	}
 }
+
+void APC_MenuController::SelectArcade()
+{
+	if (UGI_GameCoreInstance* GI = GetGI())
+	{
+		GI->SelectedPlayMode = EPlayMode::Story;
+		GI->bIsHost = true;
+	}
+
+	if (AGS_FighterState* GS = GetGS())
+	{
+		GS->bShowModeSelectUI = false;
+	}
+
+	if (UIController)
+	{
+		UIController->ShowUI(EUIScreen::CharacterStory);
+	}
+}
+
 
 void APC_MenuController::OnCharacterSelectConfirmed(int32 NumAI)
 {

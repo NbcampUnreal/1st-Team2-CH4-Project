@@ -13,11 +13,9 @@ void UCP_UIController::Initialize(APlayerController* InOwner)
 
 void UCP_UIController::ShowUI(EUIScreen TargetScreen)
 {
-	UE_LOG(LogTemp, Warning, TEXT("🎬 ShowUI 호출됨 - TargetScreen: %s"), *UEnum::GetValueAsString(TargetScreen));
 
 	if (!OwningPC)
 	{
-		UE_LOG(LogTemp, Error, TEXT("❌ ShowUI 실패: OwningPC null"));
 		return;
 	}
 
@@ -38,33 +36,30 @@ void UCP_UIController::ShowUI(EUIScreen TargetScreen)
 		TargetClass = MainMenuClass;
 		break;
 	case EUIScreen::CharacterSelect:
-		UE_LOG(LogTemp, Warning, TEXT("🎯 ShowUI: 캐릭터 셀렉 선택됨"));
 		TargetClass = CharacterSelectClass;
 		break;
 	case EUIScreen::MapSelect:
 		TargetClass = MapSelectClass;
 		break;
+	case EUIScreen::CharacterStory:
+		TargetClass = CharacterStoryClass;
+		break;
 	default:
-		UE_LOG(LogTemp, Warning, TEXT("⚠️ ShowUI: 알 수 없는 TargetScreen"));
 		return;
 	}
 
 	if (!TargetClass)
 	{
-		UE_LOG(LogTemp, Error, TEXT("❌ ShowUI: TargetClass가 nullptr"));
 		return;
 	}
 
 	CurrentWidget = CreateWidget<UUserWidget>(OwningPC, TargetClass);
 	if (!CurrentWidget)
 	{
-		UE_LOG(LogTemp, Error, TEXT("❌ ShowUI: CreateWidget 실패"));
 		return;
 	}
 
 	CurrentWidget->AddToViewport();
-	UE_LOG(LogTemp, Log, TEXT("✅ ShowUI: %s 위젯 AddToViewport 완료"), *UEnum::GetValueAsString(TargetScreen));
-
 	FInputModeGameAndUI InputMode;
 	InputMode.SetWidgetToFocus(CurrentWidget->TakeWidget());
 	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
