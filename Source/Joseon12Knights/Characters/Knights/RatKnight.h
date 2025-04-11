@@ -19,6 +19,28 @@ protected:
 	void Skill(const FInputActionValue& Value) override; // W키 스킬 : 쥐구멍
 	void Ultimate(const FInputActionValue& Value) override; // R키 궁극기 : 1등 난타
 
+private:
+	// ==============
+	// Targeting Logic
+	// ==============
+	UPROPERTY(EditAnywhere, Category = "Targeting")
+	float AttackRadius = 104.0f;  // 공격 감지 반경
+
+	UPROPERTY(EditAnywhere, Category = "Targeting")
+	float ForwardOffset = 104.0f; // 전방 오프셋 거리
+
+	UPROPERTY(EditAnywhere, Category = "Targeting")
+	bool bDebugTargeting = false; // 디버그 시각화 여부
+
+	UPROPERTY(EditAnywhere, Category = "Targeting")
+	TEnumAsByte<ECollisionChannel> TargetCollisionChannel = ECC_Pawn; // 타겟 감지 채널
+
+	// 공격 대상 찾기 함수
+	APlayerCharacter* GetTargetPlayer();
+	TArray<APlayerCharacter*> FindTargetsInRadius(const FVector& Origin, float Radius);
+	APlayerCharacter* SelectBestTarget(const TArray<APlayerCharacter*>& PotentialTargets);
+
+protected:
 	// ===========
 	// W Skill Asset
 	// ===========
@@ -79,7 +101,4 @@ private:
 	bool bIsInStealthMode = false;
 	FTimerHandle StealthTimerHandle;
 	float StealthDuration = 5.0f;
-
-	// 임시 타게팅 함수 (로직 구현 필요)
-	APlayerCharacter* GetTargetPlayer();
 };
