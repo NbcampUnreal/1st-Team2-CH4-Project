@@ -276,7 +276,7 @@ void APlayerCharacter::MulticastStartJump_Implementation()
 
 	Jump();
 
-	// ���� ���� ���
+	// 점프 사운드 재생
 	if (JumpSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, JumpSound, GetActorLocation());
@@ -321,7 +321,7 @@ void APlayerCharacter::Guard(const FInputActionValue& Value)
 
 		UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
 
-		// ���� ���
+		// 가드 사운드 재생
 		if (!bIsGuarding && bIsGuard && GuardSound)
 		{
 			UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
@@ -378,7 +378,7 @@ void APlayerCharacter::MulticastAttack_Implementation()
 		AnimInstance->Montage_Play(NormalAttackMontage);
 	}
 
-	// ���� ���
+	// 일반 공격 사운드 재생
 	if (NormalAttackSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, NormalAttackSound, GetActorLocation());
@@ -402,32 +402,32 @@ float APlayerCharacter::CalculateDamage(float BaseDamage, APlayerCharacter* Atta
 		DefenderMultiplier = DefenderBuff->GetDefenseMultiplier();
 	}
 
-	// ����: ���� ������ ���ϰ�, ��� ������ ������ ���� �������� ���
+	// 계산: 기본 데미지에 공격자 배율을 곱하고, 방어자 배율로 나누어 최종 데미지를 구함
 	return BaseDamage * AttackerMultiplier / DefenderMultiplier;
 }
 
-// ======================
-// RatKnight Targeting Logic
-// ======================
+// =============
+// Targeting Logic
+// =============
 APlayerCharacter* APlayerCharacter::GetTargetPlayer()
 {
-	FVector AttackOrigin; // ���� ���� ����
+	FVector AttackOrigin; // 공격 시작 위치
 
-	// ���Ⱑ ������ ���� ��ġ�� �������� ����
+	// 무기가 있으면 무기 소켓 위치에서 시작하도록 설정
 	if (WeaponComponent && WeaponComponent->DoesSocketExist(FName("WeaponSocket")))
 	{
 		AttackOrigin = WeaponComponent->GetSocketLocation(FName("WeaponSocket"));
 	}
-	// ������ ĳ���� ���濡 ������ ����
+	// 그렇지 않으면 캐릭터 앞쪽에 위치하도록 설정
 	else
 	{
 		AttackOrigin = GetActorLocation() + GetActorForwardVector() * ForwardOffset;
 	}
-	
-	TArray<APlayerCharacter*> PotentialTargets = FindTargetsInRadius(AttackOrigin, AttackRadius); // ���� ���� ���� ��� ĳ���͸� ã��
-	APlayerCharacter* BestTarget = SelectBestTarget(PotentialTargets); // ���� ������ Ÿ�� ����
 
-	if (bDebugTargeting) // ����� �ð�ȭ
+	TArray<APlayerCharacter*> PotentialTargets = FindTargetsInRadius(AttackOrigin, AttackRadius); // 공격 범위 내의 모든 캐릭터를 찾음
+	APlayerCharacter* BestTarget = SelectBestTarget(PotentialTargets); // 가장 적합한 타겟 선택
+
+	if (bDebugTargeting) // 디버그 시각화
 	{
 		DrawDebugSphere(GetWorld(), AttackOrigin, AttackRadius, 24,
 			BestTarget ? FColor::Green : FColor::Red, false, 1.0f);
@@ -447,27 +447,27 @@ TArray<APlayerCharacter*> APlayerCharacter::FindTargetsInRadius(const FVector& O
 	TArray<APlayerCharacter*> FoundTargets;
 	TArray<FOverlapResult> OverlapResults;
 	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this); // �ڽ��� ����
+	QueryParams.AddIgnoredActor(this); // 자신은 제외
 
-	// ��ü ������ �˻� ����
+	// 물체 오버랩 검사 수행
 	bool bOverlapFound = GetWorld()->OverlapMultiByObjectType(
 		OverlapResults,
 		Origin,
 		FQuat::Identity,
-		FCollisionObjectQueryParams(TargetCollisionChannel), // ������ ä�ο� ���� ����
+		FCollisionObjectQueryParams(TargetCollisionChannel), // 지정된 채널에 대한 검사
 		FCollisionShape::MakeSphere(Radius),
 		QueryParams
 	);
 
 	if (bOverlapFound)
 	{
-		// ������� APlayerCharacter Ÿ�Ը� ���͸�
+		// 오버랩된 APlayerCharacter 타입만 필터링
 		for (const FOverlapResult& Overlap : OverlapResults)
 		{
 			APlayerCharacter* PlayerChar = Cast<APlayerCharacter>(Overlap.GetActor());
 			if (PlayerChar && PlayerChar != this)
 			{
-				// �� ��� �����̶�� �� ���� Ÿ�����ϵ��� ���͸� ����
+				// 팀 기능 구현시 다른 팀만 타겟팅하도록 필터링 추가
 				// if (PlayerChar->GetTeam() != GetTeam()) 
 				// {
 				FoundTargets.Add(PlayerChar);
@@ -486,9 +486,9 @@ APlayerCharacter* APlayerCharacter::SelectBestTarget(const TArray<APlayerCharact
 		return nullptr;
 	}
 
-	// Ÿ�� ���� ����:
-	// 1. �켱����: ���� �þ߰� ���� �ִ� ��
-	// 2. ����å: ���� ����� ��
+	// 타겟 선택 기준:
+	// 1. 우선순위: 내 시야각 안에 있는 적
+	// 2. 거리정책: 가장 가까운 적
 
 	APlayerCharacter* BestTarget = nullptr;
 	float BestScore = -1.0f;
@@ -496,27 +496,27 @@ APlayerCharacter* APlayerCharacter::SelectBestTarget(const TArray<APlayerCharact
 	FVector Forward = GetActorForwardVector();
 	FVector ActorLocation = GetActorLocation();
 
-	const float ViewAngleCos = FMath::Cos(FMath::DegreesToRadians(60.0f)); // 60�� �þ߰�
-	const float ViewAngleWeight = 2.0f; // �þ߰� �� ��� ����ġ
+	const float ViewAngleCos = FMath::Cos(FMath::DegreesToRadians(60.0f)); // 60도 시야각
+	const float ViewAngleWeight = 2.0f; // 시야각 내 적에 가중치
 
 	for (APlayerCharacter* Target : PotentialTargets)
 	{
-		if (!Target){continue;}
+		if (!Target) { continue; }
 
 		FVector ToTarget = Target->GetActorLocation() - ActorLocation;
 		float Distance = ToTarget.Size();
-		
-		float DistanceScore = 1.0f / FMath::Max(Distance, 1.0f); // �Ÿ��� �ּ��� ���� ���� (���� ���)
-		
-		ToTarget.Normalize(); // ���� ����ȭ
 
-		float DotProduct = FVector::DotProduct(Forward, ToTarget); // ���� ���Ϳ� Ÿ�� ���� ������ ���� ���
+		float DistanceScore = 1.0f / FMath::Max(Distance, 1.0f); // 거리에 반비례하는 점수 계산 (가까울수록 높음)
 
-		float AngleScore = DotProduct > ViewAngleCos ? ViewAngleWeight : 1.0f; // �þ߰� ���� �ִ��� Ȯ�� (DotProduct > ViewAngleCos�� �þ߰� ���� ����)
+		ToTarget.Normalize(); // 방향 정규화
 
-		float FinalScore = DistanceScore * AngleScore; // ���� ���� ���
+		float DotProduct = FVector::DotProduct(Forward, ToTarget); // 전방 벡터와 타겟 방향 벡터의 내적 계산
 
-		// �� ���� ������ Ÿ���̸� ����
+		float AngleScore = DotProduct > ViewAngleCos ? ViewAngleWeight : 1.0f; // 시야각 안에 있는지 확인 (DotProduct > ViewAngleCos면 시야각 안에 있음)
+
+		float FinalScore = DistanceScore * AngleScore; // 최종 점수 계산
+
+		// 더 좋은 점수의 타겟이면 갱신
 		if (FinalScore > BestScore)
 		{
 			BestScore = FinalScore;
