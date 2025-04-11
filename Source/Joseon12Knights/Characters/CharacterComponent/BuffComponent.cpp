@@ -70,6 +70,7 @@ float UBuffComponent::GetAttackMultiplier() const
 	{
 		Multiplier *= Buff.AttackMultiplier;
 	}
+	UE_LOG(LogTemp, Warning, TEXT("Attack Multiplier: %.2f"), Multiplier);
 	return Multiplier;
 }
 
@@ -80,6 +81,7 @@ float UBuffComponent::GetDefenseMultiplier() const
 	{
 		Multiplier *= Buff.DefenseMultiplier;
 	}
+	UE_LOG(LogTemp, Warning, TEXT("Defense Multiplier: %.2f"), Multiplier);
 	return Multiplier;
 }
 
@@ -90,6 +92,7 @@ float UBuffComponent::GetMoveSpeedMultiplier() const
 	{
 		Multiplier *= Buff.MoveSpeedMultiplier;
 	}
+	UE_LOG(LogTemp, Warning, TEXT("Move Speed Multiplier: %.2f"), Multiplier);
 	return Multiplier;
 }
 
