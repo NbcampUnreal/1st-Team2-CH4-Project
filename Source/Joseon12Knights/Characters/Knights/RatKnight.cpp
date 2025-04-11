@@ -32,7 +32,6 @@ void ARatKnight::BeginPlay()
 void ARatKnight::Skill(const FInputActionValue& Value)
 {
 	// 쥐기사 W 스킬: 『쥐구멍』
-	// 이중 효과 :
 	// 1) 공격형 디버프 : 타겟에게 슬로우 효과 적용 (타겟 이동속도 70%로 2초)
 	// 2) 은신 효과 : 쥐기사 본인에게 은신 효과 적용
 
@@ -107,6 +106,8 @@ void ARatKnight::Skill(const FInputActionValue& Value)
 			bCanUseSkill = true;
 			UE_LOG(LogTemp, Warning, TEXT("RatKnight W 스킬 사용 가능!"));
 		}, 8.0f, false);
+
+	DebugPrintBuffs(Target);
 }
 
 // 은신 상태에서 캐릭터 시각적 효과 설정
@@ -312,13 +313,16 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 		UE_LOG(LogTemp, Warning, TEXT("RatKnight 궁극기 타격 성공!"));
 
 		// 타겟 위치에서 이펙트 재생 (독 또는 출혈)
-		if (RatPoisonNiagaraEffect) 
+		if (RatPoisonNiagaraEffect && Target)
 		{
-			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-				GetWorld(),
+			UNiagaraFunctionLibrary::SpawnSystemAttached(
 				RatPoisonNiagaraEffect,
-				Target->GetActorLocation(),
-				Target->GetActorRotation()
+				Target->GetRootComponent(),				// 부착 대상 컴포넌트
+				NAME_None,											// 소켓 이름 (필요하면 지정)
+				FVector::ZeroVector,								// 상대적 위치 오프셋 (필요에 따라 조정)
+				FRotator::ZeroRotator,								// 상대적 회전 오프셋 (필요에 따라 조정)
+				EAttachLocation::KeepRelativeOffset,		// 부착 위치 규칙
+				true															// auto destroy
 			);
 		}
 	}
@@ -347,4 +351,31 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 			bCanUseUltimate = true;
 			UE_LOG(LogTemp, Warning, TEXT("RatKnight 궁극기 사용 가능!"));
 		}, 8.0f, false);
+}
+
+// ===========
+//  디버그 함수
+// ===========
+void ARatKnight::DebugPrintBuffs(APlayerCharacter* Target) const
+{
+	if (Target)
+	{
+		if (UBuffComponent* TargetBuffComp = Target->FindComponentByClass<UBuffComponent>())
+		{
+			float MoveSpeedMult = TargetBuffComp->GetMoveSpeedMultiplier();
+			if (GEngine)
+			{
+				FString DebugMsg = FString::Printf(TEXT("Target %s MoveSpeed: %.2f"), *Target->GetName(), MoveSpeedMult);
+				GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, DebugMsg);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Target %s has no BuffComponent"), *Target->GetName());
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Target is nullptr"));
+	}
 }

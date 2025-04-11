@@ -26,13 +26,22 @@ void ATigerKnight::Skill(const FInputActionValue& Value)
 	// 호랑이의 분노 적용 (공격력 , 이동속도 증가)
 	if (UBuffComponent* BuffComp = FindComponentByClass<UBuffComponent>())
 	{
-		FBuffInfo TigerBuff;
-		TigerBuff.BuffType = EBuffType::AttackBuff;
-		TigerBuff.AttackMultiplier = 1.25f;  // 공격력 +25% 증가
-		TigerBuff.MoveSpeedMultiplier = 1.25f; //이동속도 +25% 증가
-		TigerBuff.Duration = 4.0f;
-		BuffComp->AddBuff(TigerBuff);
-		UE_LOG(LogTemp, Warning, TEXT("TigerKnight W Skill is Succeed!"));
+		// 공격력 증가 버프
+		FBuffInfo AttackBuff;
+		AttackBuff.BuffType = EBuffType::AttackBuff;
+		AttackBuff.AttackMultiplier = 1.30f;  // +30% 공격력
+		AttackBuff.Duration = 5.0f;
+		BuffComp->AddBuff(AttackBuff);
+
+		// 이동속도 증가 버프
+		FBuffInfo SpeedBuff;
+		// 만약 별도의 타입을 사용하고 싶다면 EBuffType::SpeedBuff를 추가하고 사용.
+		SpeedBuff.BuffType = EBuffType::AttackBuff;
+		SpeedBuff.MoveSpeedMultiplier = 1.25f; // +25% 이동속도
+		SpeedBuff.Duration = 5.0f;
+		BuffComp->AddBuff(SpeedBuff);
+
+		UE_LOG(LogTemp, Warning, TEXT("TigerKnight W Skill Succeed!"));
 	}
 
 	// 쿨다운 시작 (예: 5초)
@@ -102,13 +111,16 @@ void ATigerKnight::Ultimate(const FInputActionValue& Value)
 
 
 			// 타겟 위치에서 이펙트 재생 (독 또는 출혈)
-			if (TigerBleedNiagaraEffect)
+			if (TigerBleedNiagaraEffect && Target)
 			{
-				UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-					GetWorld(),
+				UNiagaraFunctionLibrary::SpawnSystemAttached(
 					TigerBleedNiagaraEffect,
-					Target->GetActorLocation(),
-					Target->GetActorRotation()
+					Target->GetRootComponent(),			// 부착 대상 컴포넌트
+					NAME_None,										// 소켓 이름 (필요하면 지정)
+					FVector::ZeroVector,							// 상대적 위치 오프셋 (필요에 따라 조정)
+					FRotator::ZeroRotator,							// 상대적 회전 오프셋 (필요에 따라 조정)
+					EAttachLocation::KeepRelativeOffset,	// 부착 위치 규칙
+					true														// auto destroy
 				);
 			}
 		}

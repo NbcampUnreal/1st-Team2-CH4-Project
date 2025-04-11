@@ -82,4 +82,11 @@ private:
 	bool bIsInStealthMode = false;
 	FTimerHandle StealthTimerHandle;
 	float StealthDuration = 5.0f;
+
+// ===========
+//  디버그 함수
+// ===========
+public:
+	UFUNCTION(BlueprintCallable, Category = "Debug")
+	void DebugPrintBuffs(APlayerCharacter* Target) const;
 };
