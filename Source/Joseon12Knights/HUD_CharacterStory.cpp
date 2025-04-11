@@ -8,13 +8,11 @@ void UHUD_CharacterStory::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	// 타일 등록
 	Tiles = {
 		CharacterPannel_1, CharacterPannel_2, CharacterPannel_3, CharacterPannel_4,
 		CharacterPannel_5, CharacterPannel_6, CharacterPannel_7, CharacterPannel_8
 	};
 
-	// 타일에 Panel 설정 및 캐릭터 ID 지정
 	const TArray<FString> CharacterIDs = {
 		TEXT("1"), TEXT("2"), TEXT("3"), TEXT("4"),
 		TEXT("5"), TEXT("6"), TEXT("7"), TEXT("8")

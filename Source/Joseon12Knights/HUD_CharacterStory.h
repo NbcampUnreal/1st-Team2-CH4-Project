@@ -12,7 +12,6 @@ class JOSEON12KNIGHTS_API UHUD_CharacterStory : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 
-	// 타일 목록
 	UPROPERTY()
 	TArray<class UHUD_CharacterSelectTile*> Tiles;
 

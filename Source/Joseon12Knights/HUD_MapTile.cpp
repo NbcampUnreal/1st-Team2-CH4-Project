@@ -14,7 +14,6 @@ void UHUD_MapTile::NativeConstruct()
         Button_134->OnClicked.AddDynamic(this, &UHUD_MapTile::OnTileClicked);
     }
 
-    // 초기 보더 숨김
     if (Border_Selection)
     {
         Border_Selection->SetVisibility(ESlateVisibility::Hidden);
@@ -69,8 +68,6 @@ void UHUD_MapTile::OnTileClicked()
             }
         }
     }
-
-    UE_LOG(LogTemp, Warning, TEXT("🟩 Tile 클릭됨: %s"), *GetName());
 
     if (UHUD_MapSelect* Parent = GetTypedOuter<UHUD_MapSelect>())
     {

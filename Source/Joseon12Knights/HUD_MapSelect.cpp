@@ -88,7 +88,6 @@ void UHUD_MapSelect::ConfirmSelection()
 {
     if (!SelectedTile)
     {
-        UE_LOG(LogTemp, Error, TEXT("❌ ConfirmSelection: 선택된 타일이 없습니다."));
         return;
     }
 
@@ -106,7 +105,6 @@ void UHUD_MapSelect::ConfirmSelection()
         }
         else
         {
-            UE_LOG(LogTemp, Error, TEXT("❌ ConfirmSelection: 알 수 없는 플레이 모드입니다."));
             return;
         }
 
@@ -114,15 +112,10 @@ void UHUD_MapSelect::ConfirmSelection()
 
         if (MapName.IsEmpty())
         {
-            UE_LOG(LogTemp, Error, TEXT("❌ ConfirmSelection: 맵 이름 추출 실패 (빈 문자열)"));
             return;
         }
 
-        // ✅ GameInstance에 저장
         GI->SelectedMap = MapToLoad;
-
-        // ✅ 맵 오픈
-        UE_LOG(LogTemp, Warning, TEXT("🚀 OpenLevel 호출: %s"), *MapName);
         UGameplayStatics::OpenLevel(this, FName(*MapName));
     }
 }

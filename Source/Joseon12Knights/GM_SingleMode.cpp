@@ -19,9 +19,6 @@ void AGM_SingleMode::ProceedToMatch()
 
 			UGameplayStatics::OpenLevel(this, FName(*AssetName));
 		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("ProceedToMatch: 선택된 맵이 유효하지 않음"));
-		}
+
 	}
 }

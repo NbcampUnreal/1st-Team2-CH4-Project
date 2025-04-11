@@ -141,7 +141,6 @@ void APC_MenuController::OnCharacterSelectConfirmed(int32 NumAI)
 		{
 			if (NumAI < 1)
 			{
-				UE_LOG(LogTemp, Warning, TEXT("At least 1 AI must be selected"));
 				return;
 			}
 
@@ -187,8 +186,6 @@ void APC_MenuController::HandleBackToCharacterSelect()
 
 void APC_MenuController::HandleBackToMainMenu()
 {
-	UE_LOG(LogTemp, Warning, TEXT("🔄 HandleBackToMainMenu 실행됨 → MainMenu 호출 시도"));
-
 	if (UGI_GameCoreInstance* GI = GetGI())
 	{
 		GI->SelectedCharacterID = TEXT("");
