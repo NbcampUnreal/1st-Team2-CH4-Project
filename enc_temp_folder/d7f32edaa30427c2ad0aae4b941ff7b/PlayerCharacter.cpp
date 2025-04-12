@@ -246,7 +246,7 @@ void APlayerCharacter::Landed(const FHitResult& Hit)
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
 	float AxisValue = Value.Get<float>();
-	AddMovementInput(GetActorForwardVector(), AxisValue * MoveSpeed);
+	
 	Server_Move(AxisValue);
 }
 
@@ -259,9 +259,13 @@ void APlayerCharacter::Multicast_Move_Implementation(float AxisValue)
 {
 	float Direction = AxisValue < 0 ? 1 : -1;
 
+	AddMovementInput(GetActorForwardVector(), AxisValue * MoveSpeed);
+
 	FRotator CurrentRotation = FRotator(0.f, Direction * 90.f, 0.f);
 	GetMesh()->SetWorldRotation(CurrentRotation);
 }
+
+
 
 void APlayerCharacter::StartJump(const FInputActionValue& Value)
 {

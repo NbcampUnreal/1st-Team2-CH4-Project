@@ -118,8 +118,6 @@ public:
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
-	//void ServerSetDirection(FRotator)
-
 	UFUNCTION(Server, Unreliable)
 	void Server_Move(float AxisValue);
 
