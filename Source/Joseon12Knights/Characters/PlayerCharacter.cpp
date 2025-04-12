@@ -14,9 +14,8 @@
 APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMontage(nullptr)
 {
 	PrimaryActorTick.bCanEverTick = true;
-	
-	TMap<FString, FString> MapAnimNamePath;
 
+	TMap<FString, FString> MapAnimNamePath;
 	MapAnimNamePath.Add("Hit", "/Game/ModularAnimalKnightsPolyart/Animations/AM_GetHitAnim.AM_GetHitAnim");
 	MapAnimNamePath.Add("Death", "/Game/ModularAnimalKnightsPolyart/Animations/AM_Die.AM_Die");
 	MapAnimNamePath.Add("Guard", "/Game/ModularAnimalKnightsPolyart/Animations/AM_Defend.AM_Defend");
@@ -46,6 +45,7 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 	GetMesh()->SetRelativeLocation(FVector(0, 0, -90.f));
 	FRotator CurrentRotation = FRotator(0.f, -90.f, 0.f);
 	GetMesh()->SetWorldRotation(CurrentRotation);
+	GetMesh()->SetIsReplicated(false);
 
 	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimBPClass(TEXT("/Game/Blueprints/Animations/ABP_Character.ABP_Character_C"));
 	if (AnimBPClass.Succeeded())
@@ -53,13 +53,6 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 		GetMesh()->SetAnimInstanceClass(AnimBPClass.Class);
 	}
 
-	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
-	SpringArm->SetupAttachment(RootComponent);
-	SpringArm->TargetArmLength = 300.0f;
-	SpringArm->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
-
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
 	NormalAttackMontageIndex = 0;
 
 	WeaponComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon"));
@@ -75,7 +68,7 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 
 	UCapsuleComponent* Capsule = GetCapsuleComponent();
 	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	Capsule->SetCollisionObjectType(ECC_Pawn); 
+	Capsule->SetCollisionObjectType(ECC_Pawn);
 	Capsule->SetCollisionResponseToAllChannels(ECR_Ignore);
 	Capsule->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
 	Capsule->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
@@ -88,12 +81,10 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
 	StatComponent = CreateDefaultSubobject<UStatComponent>(TEXT("StatComponent"));
 
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+	bUseControllerRotationYaw = false;
 }
 
-void APlayerCharacter::Test()
-{
-	UE_LOG(LogTemp, Warning, TEXT("TEST : %s"), *GetName());
-}
 
 void APlayerCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -107,7 +98,7 @@ void APlayerCharacter::OnWeaponOverlap(UPrimitiveComponent* OverlappedComp, AAct
 	if (APlayerCharacter* EnemyCharacter = Cast<APlayerCharacter>(OtherActor))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
-		
+
 		UGameplayStatics::ApplyDamage(EnemyCharacter, 50.f, GetController(), this, UDamageType::StaticClass());
 	}
 }
@@ -120,6 +111,18 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 	FVector Direction = DamageCauser->GetActorLocation() - GetActorLocation();
 
 	LaunchCharacter(-Direction.GetSafeNormal() * KnockBackDistance, true, false);
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	FString AnimKey = bIsGuarding ? TEXT("GuardHit") : TEXT("Hit");
+
+	UAnimMontage* AM = MapAnim[AnimKey];
+
+	if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
+	{
+		AnimInstance->StopAllMontages(1);
+		AnimInstance->Montage_Play(AM);
+	}
 
 	return 0.0f;
 }
@@ -136,12 +139,6 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(APlayerCharacter, bIsDoubleJump);
-}
-
-void APlayerCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
 }
 
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -246,21 +243,32 @@ void APlayerCharacter::Landed(const FHitResult& Hit)
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
 	float AxisValue = Value.Get<float>();
-	AddMovementInput(GetActorForwardVector(), AxisValue * MoveSpeed);
-	Server_Move(AxisValue);
+	FVector Movement = FVector(AxisValue * MoveSpeed, 0.f, 0.f);
+	AddMovementInput(Movement.GetSafeNormal(), 1.f);
+
+	FRotator DesiredRotation = AxisValue < 0 ? FRotator(0.f, 180.f, 0.f) : FRotator(0.f, 0.f, 0.f);
+
+	if (!DesiredRotation.Equals(LastSentRotation, 0.01f))
+	{
+		LastSentRotation = DesiredRotation;
+		SetActorRotation(DesiredRotation);
+		ServerSetDirection(DesiredRotation);
+	}
 }
 
-void APlayerCharacter::Server_Move_Implementation(float AxisValue)
+void APlayerCharacter::ServerSetDirection_Implementation(const FRotator& Rotation)
 {
-	Multicast_Move(AxisValue);
+	MulticastSetDirection(Rotation);
 }
 
-void APlayerCharacter::Multicast_Move_Implementation(float AxisValue)
+void APlayerCharacter::MulticastSetDirection_Implementation(const FRotator& Rotation)
 {
-	float Direction = AxisValue < 0 ? 1 : -1;
-
-	FRotator CurrentRotation = FRotator(0.f, Direction * 90.f, 0.f);
-	GetMesh()->SetWorldRotation(CurrentRotation);
+	if (!IsLocallyControlled())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Back"));
+		FRotator NormalRotation = Rotation.GetNormalized();
+		SetActorRotation(NormalRotation);
+	}
 }
 
 void APlayerCharacter::StartJump(const FInputActionValue& Value)
@@ -275,7 +283,6 @@ void APlayerCharacter::ServerStartJump_Implementation()
 
 void APlayerCharacter::MulticastStartJump_Implementation()
 {
-	//JumpCount++;
 	if (JumpCurrentCount == 1)
 	{
 		bIsDoubleJump = true;
@@ -329,27 +336,27 @@ void APlayerCharacter::MulticastDash_Implementation()
 
 void APlayerCharacter::Guard(const FInputActionValue& Value)
 {
-		bool bIsGuard = Value.Get<bool>();
+	bool bIsGuard = Value.Get<bool>();
 
-		UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
+	UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
 
-		// 사운드 재생
-		if (!bIsGuarding && bIsGuard && GuardSound)
-		{
-			UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
-		}
+	// 사운드 재생
+	if (!bIsGuarding && bIsGuard && GuardSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
+	}
 
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-		UAnimMontage* AM = MapAnim["Guard"];
+	UAnimMontage* AM = MapAnim["Guard"];
 
-		if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
-		{
-			AnimInstance->StopAllMontages(1);
-			AnimInstance->Montage_Play(AM);
-		}
+	if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
+	{
+		AnimInstance->StopAllMontages(1);
+		AnimInstance->Montage_Play(AM);
+	}
 
-		bIsGuarding = true;
+	bIsGuarding = true;
 }
 
 void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)

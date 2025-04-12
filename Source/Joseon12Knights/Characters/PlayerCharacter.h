@@ -22,8 +22,6 @@ public:
 	APlayerCharacter();
 
 protected:
-	UFUNCTION()
-	void Test();
 
 	UFUNCTION()
 	void OnCapsuleOverlap(
@@ -72,12 +70,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimMontage* UltimateMontage;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
-	UCameraComponent* Camera;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
-	USpringArmComponent* SpringArm;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment")
 	UStaticMeshComponent* WeaponComponent;
 
@@ -99,16 +91,13 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
 	UStatComponent* StatComponent;
 	
-
+	FRotator LastSentRotation;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Animation")
 	TMap<FString, UAnimMontage*> MapAnim;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -118,21 +107,19 @@ public:
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
-	//void ServerSetDirection(FRotator)
-
 	UFUNCTION(Server, Unreliable)
-	void Server_Move(float AxisValue);
+	void ServerSetDirection(const FRotator& Rotation);
 
 	UFUNCTION(NetMulticast, Unreliable)
-	void Multicast_Move(float AxisValue);
+	void MulticastSetDirection(const FRotator& Rotation);
 
 	UFUNCTION()
 	void StartJump(const FInputActionValue& Value);
 
-	UFUNCTION(Server, Unreliable)
+	UFUNCTION(Server, Reliable)
 	void ServerStartJump();
 
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void MulticastStartJump();
 
 	UFUNCTION()
@@ -142,7 +129,7 @@ public:
 	void Dash(const FInputActionValue& Value);
 	UFUNCTION(Server, Unreliable)
 	void ServerDash();
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void MulticastDash();
 
 	UFUNCTION()
@@ -157,7 +144,7 @@ public:
 	UFUNCTION(Server, Unreliable)
 	void ServerAttack();
 
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void MulticastAttack();
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
