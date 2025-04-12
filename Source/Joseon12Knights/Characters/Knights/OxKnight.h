@@ -43,10 +43,15 @@ private:
 	FTimerHandle PlayPersistentMontageTimerHandle;
 	FTimerHandle StopAnimationTimerHandle;
 
+	// 돌진 후 충돌 검사를 위한 타이머 핸들
+	FTimerHandle UltimateCollisionTimerHandle;
+
 	void PlayPersistentSkillMontage();
 
-	UFUNCTION()
 	void StopPersistentSkillAnimation();
+
+	void PerformUltimateCollisionCheck();
+	TSet<AActor*> ProcessedTargets;
 
 // ===========
 //  디버그 함수

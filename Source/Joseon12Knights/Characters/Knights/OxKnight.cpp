@@ -95,14 +95,6 @@ void AOxKnight::Ultimate(const FInputActionValue& Value)
 		return;
 	}
 
-	// 돌진 효과 :: 캐릭터가 바라보는 정확한 전방 벡터 계산
-	// GetActorRotation()을 사용해 로컬 X축을 계산하고, 필요할 때 반전!!
-	FRotator ActorRotation = GetActorRotation();
-	FVector CalculatedForward = FRotationMatrix(ActorRotation).GetUnitAxis(EAxis::X);
-	FVector FinalForward = CalculatedForward;
-	FVector LaunchVelocity = FinalForward * UltimateLaunchForce;
-	LaunchCharacter(LaunchVelocity, true, false); // XY 강제 적용, Z는 유지
-
 	// 궁극기 몽타주 재생
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && UltimateMontage)
@@ -111,25 +103,16 @@ void AOxKnight::Ultimate(const FInputActionValue& Value)
 		AnimInstance->Montage_Play(UltimateMontage);
 	}
 
-	//타겟에게 스턴 적용
-	APlayerCharacter* Target = GetTargetPlayer();
-	if (Target)
-	{
-		if (UBuffComponent* BuffComp = Target->FindComponentByClass<UBuffComponent>())
-		{
-			FBuffInfo StunBuff;
-			StunBuff.BuffType = EBuffType::Slow;
-			StunBuff.Duration = 4.0f;
-			StunBuff.MoveSpeedMultiplier = 0.1f; // 스턴효과 : 이동속도 0.1 즉, 거의 멈춘 상태
-			BuffComp->AddBuff(StunBuff);
-			
-			UE_LOG(LogTemp, Warning, TEXT("OxKnight Ultimate is Succeed!"));
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("OxKnight Ultimate is Failed!"));
-	}
+	// 이미 처리된 타겟 목록 초기화
+	ProcessedTargets.Empty();
+
+	FVector LaunchVelocity = GetActorForwardVector() * UltimateLaunchForce;
+	LaunchCharacter(LaunchVelocity, true, false);
+
+	// 돌진 후 충돌 검사를 위한 타이머 설정 (한 번만 실행되도록)
+	GetWorldTimerManager().ClearTimer(UltimateCollisionTimerHandle);
+	GetWorldTimerManager().SetTimer(UltimateCollisionTimerHandle, this, &AOxKnight::PerformUltimateCollisionCheck, 0.1f, false);
+
 	if (OxUltimateEffect)
 	{
 		UGameplayStatics::SpawnEmitterAttached(OxUltimateEffect, GetMesh(), FName("UltimateSocket"));
@@ -148,9 +131,61 @@ void AOxKnight::Ultimate(const FInputActionValue& Value)
 			bCanUseUltimate = true;
 			UE_LOG(LogTemp, Warning, TEXT("OxKnight Ultimate is available!"));
 		}, 8.0f, false);
-
-	DebugPrintTargetBuffs(Target); // 타겟 버프 적용 상태 출력
 }
+
+// 돌진 후 충돌 검사를 수행하는 함수
+void AOxKnight::PerformUltimateCollisionCheck()
+{
+	// 현재 위치 기준으로 전방 구체 검출
+	FVector Start = GetActorLocation();
+	FVector End = Start + GetActorForwardVector() * UltimateLaunchForce * 0.5f;
+
+	TArray<FHitResult> HitResults;
+	FCollisionShape SphereShape = FCollisionShape::MakeSphere(70.0f);
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	// 디버그 시각화
+	//DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 5.0f, 0, 2.0f);
+	//DrawDebugSphere(GetWorld(), End, 200.0f, 16, FColor::Blue, false, 5.0f);
+
+	bool bHit = GetWorld()->SweepMultiByChannel(
+		HitResults,
+		Start,
+		End,
+		FQuat::Identity,
+		ECC_Pawn,
+		SphereShape,
+		QueryParams
+	);
+
+	int32 AppliedCount = 0;
+
+	for (const FHitResult& Hit : HitResults)
+	{
+		APlayerCharacter* Target = Cast<APlayerCharacter>(Hit.GetActor());
+
+		// 유효한 타겟이면서 이전에 처리하지 않은 타겟만 처리
+		if (Target && Target != this && !ProcessedTargets.Contains(Target))
+		{
+			ProcessedTargets.Add(Target);
+
+			if (UBuffComponent* TargetBuffComp = Target->FindComponentByClass<UBuffComponent>())
+			{
+				FBuffInfo StunBuff;
+				StunBuff.BuffType = EBuffType::Slow;
+				StunBuff.Duration = 4.0f;
+				StunBuff.MoveSpeedMultiplier = 0.1f;
+				TargetBuffComp->AddBuff(StunBuff);
+
+				// 디버그 정보 출력
+				DebugPrintTargetBuffs(Target);
+				AppliedCount++;
+			}
+		}
+	}
+}
+
 
 void AOxKnight::DebugPrintSelfBuffs() const
 {
@@ -174,24 +209,24 @@ void AOxKnight::DebugPrintSelfBuffs() const
 
 void AOxKnight::DebugPrintTargetBuffs(APlayerCharacter* Target) const
 {
-	if (Target)
+	if (!Target)
 	{
-		if (UBuffComponent* TargetBuffComp = Target->FindComponentByClass<UBuffComponent>())
+		UE_LOG(LogTemp, Warning, TEXT("DebugPrintTargetBuffs: Target is nullptr"));
+		return;
+	}
+
+	if (UBuffComponent* TargetBuffComp = Target->FindComponentByClass<UBuffComponent>())
+	{
+		float MoveSpeedMult = TargetBuffComp->GetMoveSpeedMultiplier();
+
+		if (GEngine)
 		{
-			float MoveSpeedMult = TargetBuffComp->GetMoveSpeedMultiplier();
-			if (GEngine)
-			{
-				FString DebugMsg = FString::Printf(TEXT("Target %s MoveSpeed: %.2f"), *Target->GetName(), MoveSpeedMult);
-				GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, DebugMsg);
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Target %s has no BuffComponent"), *Target->GetName());
+			FString DebugMsg = FString::Printf(TEXT("Target %s MoveSpeed: %.2f"), *Target->GetName(), MoveSpeedMult);
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, DebugMsg);
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Target is nullptr"));
+		UE_LOG(LogTemp, Error, TEXT("Target %s has no BuffComponent"), *Target->GetName());
 	}
 }
