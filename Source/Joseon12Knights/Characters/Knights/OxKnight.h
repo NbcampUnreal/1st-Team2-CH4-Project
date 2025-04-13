@@ -1,5 +1,3 @@
-
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -15,19 +13,25 @@ protected:
 	void Skill(const FInputActionValue& Value) override;
 	void Ultimate(const FInputActionValue& Value) override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OXKnight Skill")
-	UParticleSystem* OXSkill1Effect;
+	// W 스킬 에셋
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OxKnight Skill")
+	UParticleSystem* OxSkill1Effect;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OXKnight Skill")
-	USoundBase* OXSkill1Sound;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OxKnight Skill")
+	USoundBase* OxSkill1Sound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OxKnight Skill")
+	UAnimMontage* PersistentSkillMontage;
 
 	// R 궁극기 에셋
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OxKnight Skill")
+	UParticleSystem* OxUltimateEffect;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OXKnight Skill")
-	UParticleSystem* OXUltimateEffect;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OxKnight Skill")
+	USoundBase* OxUltimateSound;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OXKnight Skill")
-	USoundBase* OXUltimateSound;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "OxKnight Skill")
+	float UltimateLaunchForce = 1000.0f;
 
 private:
 	// 쿨타임 관리 변수
@@ -36,4 +40,21 @@ private:
 	FTimerHandle SkillCooldownTimerHandle;
 	FTimerHandle UltimateCooldownTimerHandle;
 
+	FTimerHandle PlayPersistentMontageTimerHandle;
+	FTimerHandle StopAnimationTimerHandle;
+
+	void PlayPersistentSkillMontage();
+
+	UFUNCTION()
+	void StopPersistentSkillAnimation();
+
+// ===========
+//  디버그 함수
+// ===========
+public:
+	UFUNCTION(BlueprintCallable, Category = "Debug")
+	void DebugPrintSelfBuffs() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Debug")
+	void DebugPrintTargetBuffs(APlayerCharacter* Target) const;
 };

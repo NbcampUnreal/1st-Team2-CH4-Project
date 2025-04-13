@@ -13,6 +13,7 @@ AMainPlayerController::AMainPlayerController()
 {
 }
 
+
 void AMainPlayerController::BeginPlay()
 {
 	Super::BeginPlay();

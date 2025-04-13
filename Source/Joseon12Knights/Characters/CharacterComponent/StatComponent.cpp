@@ -20,12 +20,21 @@ void UStatComponent::InitializeStats(const FCharacterStatInfo& NewStats)
 
 void UStatComponent::ChangeHP(float Delta)
 {
-	CurrentHP = FMath::Clamp(CurrentHP + Delta, 0.0f, BaseStats.MaxHP);
-	if (CurrentHP <= 0.0f)
-	{
-		// HP가 0 이하가 되면 사망 이벤트 발생
-		OnDeath.Broadcast();
-	}
+    float OldHP = CurrentHP; // 변경 전 HP 저장
+
+    // HP 변경: 음수는 데미지, 양수는 회복
+    CurrentHP = FMath::Clamp(CurrentHP + Delta, 0.0f, BaseStats.MaxHP);
+
+    if (GEngine)
+    {
+        FString DebugMsg = FString::Printf(TEXT("HP Changed: OldHP = %.2f, CurrentHP = %.2f"), OldHP, CurrentHP);
+        GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, DebugMsg);
+    }
+
+    if (CurrentHP <= 0.0f)
+    {
+        OnDeath.Broadcast();
+    }
 }
 
 

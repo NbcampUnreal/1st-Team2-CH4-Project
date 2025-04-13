@@ -26,19 +26,12 @@ void ARatKnight::BeginPlay()
 	}
 }
 
-APlayerCharacter* ARatKnight::GetTargetPlayer()
-{
-	// TODO: 타겟팅 로직 구현 필요 (라인트레이스? 콜리전?)
-	return nullptr; // 임시로 널 반환
-}
-
 // ====================
 // RatKnight W Skill Logic
 // ====================
 void ARatKnight::Skill(const FInputActionValue& Value)
 {
 	// 쥐기사 W 스킬: 『쥐구멍』
-	// 이중 효과 :
 	// 1) 공격형 디버프 : 타겟에게 슬로우 효과 적용 (타겟 이동속도 70%로 2초)
 	// 2) 은신 효과 : 쥐기사 본인에게 은신 효과 적용
 
@@ -60,7 +53,7 @@ void ARatKnight::Skill(const FInputActionValue& Value)
 	APlayerCharacter* Target = GetTargetPlayer();
 	if (Target)
 	{
-		if (UBuffComponent* TargetBuffComp = FindComponentByClass<UBuffComponent>())
+		if (UBuffComponent* TargetBuffComp = Target -> FindComponentByClass<UBuffComponent>()) // 타겟에게 디버프 적용...!
 		{
 			FBuffInfo SlowDebuff;
 			SlowDebuff.BuffType = EBuffType::Slow;
@@ -76,7 +69,7 @@ void ARatKnight::Skill(const FInputActionValue& Value)
 	}
 
 	// 2) 쥐기사 본인에게 은신 효과 적용 (5초간 은신)
-	if (UBuffComponent* SelfBuffComp = FindComponentByClass<UBuffComponent>())
+	if (UBuffComponent* SelfBuffComp = FindComponentByClass<UBuffComponent>()) // 쥐기사 본인에게 은신 효과 적용
 	{
 		FBuffInfo StealthBuff;
 		StealthBuff.BuffType = EBuffType::Stealth;
@@ -113,6 +106,8 @@ void ARatKnight::Skill(const FInputActionValue& Value)
 			bCanUseSkill = true;
 			UE_LOG(LogTemp, Warning, TEXT("RatKnight W 스킬 사용 가능!"));
 		}, 8.0f, false);
+
+	DebugPrintTargetBuffs(Target);
 }
 
 // 은신 상태에서 캐릭터 시각적 효과 설정
@@ -297,15 +292,39 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 	APlayerCharacter* Target = GetTargetPlayer();
 	if (Target) 
 	{
-		if (UBuffComponent* TargetBuffComp = FindComponentByClass<UBuffComponent>())
+		if (UBuffComponent* TargetBuffComp = Target -> FindComponentByClass<UBuffComponent>()) // 타겟에게 디버프 적용
 		{
 			FBuffInfo PoisonDebuff;
 			PoisonDebuff.BuffType = EBuffType::Poison;
 			PoisonDebuff.Duration = 4.0f;
 			PoisonDebuff.DamageOverTimePercent = 0.05f; // 초당 5% 공격력에 해당하는 도트 효과
 			TargetBuffComp->AddBuff(PoisonDebuff);
+
+			// 독 데미지는 스킬 사용자의 공격력에 기반하므로, 공격자(=this)의 StatComponent에서 값을 가져와 저장
+			if (this->GetStatComponent())
+			{
+				PoisonDebuff.SourceAttackValue = this->GetStatComponent()->GetAttack();
+			}
+
+			TargetBuffComp->AddBuff(PoisonDebuff);
 		}
+
+
 		UE_LOG(LogTemp, Warning, TEXT("RatKnight 궁극기 타격 성공!"));
+
+		// 타겟 위치에서 이펙트 재생 (독 또는 출혈)
+		if (RatPoisonNiagaraEffect && Target)
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAttached(
+				RatPoisonNiagaraEffect,
+				Target->GetRootComponent(),				// 부착 대상 컴포넌트
+				NAME_None,											// 소켓 이름 (필요하면 지정)
+				FVector::ZeroVector,								// 상대적 위치 오프셋 (필요에 따라 조정)
+				FRotator::ZeroRotator,								// 상대적 회전 오프셋 (필요에 따라 조정)
+				EAttachLocation::KeepRelativeOffset,		// 부착 위치 규칙
+				true															// auto destroy
+			);
+		}
 	}
 	else
 	{
@@ -332,4 +351,31 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 			bCanUseUltimate = true;
 			UE_LOG(LogTemp, Warning, TEXT("RatKnight 궁극기 사용 가능!"));
 		}, 8.0f, false);
+}
+
+// ===========
+//  디버그 함수
+// ===========
+void ARatKnight::DebugPrintTargetBuffs(APlayerCharacter* Target) const
+{
+	if (Target)
+	{
+		if (UBuffComponent* TargetBuffComp = Target->FindComponentByClass<UBuffComponent>())
+		{
+			float MoveSpeedMult = TargetBuffComp->GetMoveSpeedMultiplier();
+			if (GEngine)
+			{
+				FString DebugMsg = FString::Printf(TEXT("Target %s MoveSpeed: %.2f"), *Target->GetName(), MoveSpeedMult);
+				GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, DebugMsg);
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Target %s has no BuffComponent"), *Target->GetName());
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Target is nullptr"));
+	}
 }

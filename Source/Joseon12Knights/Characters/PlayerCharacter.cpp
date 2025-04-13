@@ -8,6 +8,8 @@
 #include "Components/PrimitiveComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
+#include "Animation/AnimInstance.h"
+#include "Animation/AnimMontage.h"
 
 
 // Sets default values
@@ -114,14 +116,18 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
+	FOnMontageEnded EndDelegate;
+	EndDelegate.BindUObject(this, &APlayerCharacter::Test);
+
 	FString AnimKey = bIsGuarding ? TEXT("GuardHit") : TEXT("Hit");
 
 	UAnimMontage* AM = MapAnim[AnimKey];
-
+	AnimInstance->Montage_SetEndDelegate(EndDelegate, AM);
 	if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
 	{
 		AnimInstance->StopAllMontages(1);
 		AnimInstance->Montage_Play(AM);
+		
 	}
 
 	return 0.0f;
@@ -140,6 +146,27 @@ void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(APlayerCharacter, bIsDoubleJump);
 }
+
+void APlayerCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	UpdateMovementSpeed();
+}
+
+void APlayerCharacter::UpdateMovementSpeed() // ë§??„ë ˆ?„ë§ˆ???¸ì¶œ?˜ì–´ ?´ë™ ?ë„ë¥??…ë°?´íŠ¸.
+{
+	if (GetCharacterMovement() && BuffComponent)
+	{
+		float EffectiveSpeed = MoveSpeed * BuffComponent->GetMoveSpeedMultiplier();
+		GetCharacterMovement()->MaxWalkSpeed = EffectiveSpeed;
+	}
+}
+
+void APlayerCharacter::Test(UAnimMontage* Montage, bool bInterrupted)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Hit End"));
+}
+
 
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -290,6 +317,7 @@ void APlayerCharacter::MulticastStartJump_Implementation()
 
 	Jump();
 
+
 	if (JumpSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, JumpSound, GetActorLocation());
@@ -424,7 +452,125 @@ float APlayerCharacter::CalculateDamage(float BaseDamage, APlayerCharacter* Atta
 		DefenderMultiplier = DefenderBuff->GetDefenseMultiplier();
 	}
 
-	// ¿¹½Ã: °ø°İ ¹èÀ²À» °öÇÏ°í, ¹æ¾î ¹èÀ²·Î ³ª´©¾î ÃÖÁ¾ µ¥¹ÌÁö¸¦ °è»ê
 	return BaseDamage * AttackerMultiplier / DefenderMultiplier;
 }
 
+// =============
+// Targeting Logic
+// =============
+APlayerCharacter* APlayerCharacter::GetTargetPlayer()
+{
+	FVector AttackOrigin; // ê³µê²© ?œì‘ ?„ì¹˜
+
+	// ë¬´ê¸°ê°€ ?ˆìœ¼ë©?ë¬´ê¸° ?Œì¼“ ?„ì¹˜?ì„œ ?œì‘?˜ë„ë¡??¤ì •
+	if (WeaponComponent && WeaponComponent->DoesSocketExist(FName("WeaponSocket")))
+	{
+		AttackOrigin = WeaponComponent->GetSocketLocation(FName("WeaponSocket"));
+	}
+	// ê·¸ë ‡ì§€ ?Šìœ¼ë©?ìºë¦­???ìª½???„ì¹˜?˜ë„ë¡??¤ì •
+	else
+	{
+		AttackOrigin = GetActorLocation() + GetActorForwardVector() * ForwardOffset;
+	}
+
+	TArray<APlayerCharacter*> PotentialTargets = FindTargetsInRadius(AttackOrigin, AttackRadius); // ê³µê²© ë²”ìœ„ ?´ì˜ ëª¨ë“  ìºë¦­?°ë? ì°¾ìŒ
+	APlayerCharacter* BestTarget = SelectBestTarget(PotentialTargets); // ê°€???í•©???€ê²?? íƒ
+
+	if (bDebugTargeting) // ?”ë²„ê·??œê°??
+	{
+		DrawDebugSphere(GetWorld(), AttackOrigin, AttackRadius, 24,
+			BestTarget ? FColor::Green : FColor::Red, false, 1.0f);
+
+		if (BestTarget)
+		{
+			DrawDebugLine(GetWorld(), AttackOrigin, BestTarget->GetActorLocation(),
+				FColor::Yellow, false, 1.0f, 0, 2.0f);
+		}
+	}
+
+	return BestTarget;
+}
+
+TArray<APlayerCharacter*> APlayerCharacter::FindTargetsInRadius(const FVector& Origin, float Radius)
+{
+	TArray<APlayerCharacter*> FoundTargets;
+	TArray<FOverlapResult> OverlapResults;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this); // ?ì‹ ?€ ?œì™¸
+
+	// ë¬¼ì²´ ?¤ë²„??ê²€???˜í–‰
+	bool bOverlapFound = GetWorld()->OverlapMultiByObjectType(
+		OverlapResults,
+		Origin,
+		FQuat::Identity,
+		FCollisionObjectQueryParams(TargetCollisionChannel), // ì§€?•ëœ ì±„ë„???€??ê²€??
+		FCollisionShape::MakeSphere(Radius),
+		QueryParams
+	);
+
+	if (bOverlapFound)
+	{
+		// ?¤ë²„?©ëœ APlayerCharacter ?€?…ë§Œ ?„í„°ë§?
+		for (const FOverlapResult& Overlap : OverlapResults)
+		{
+			APlayerCharacter* PlayerChar = Cast<APlayerCharacter>(Overlap.GetActor());
+			if (PlayerChar && PlayerChar != this)
+			{
+				// ?€ ê¸°ëŠ¥ êµ¬í˜„???¤ë¥¸ ?€ë§??€ê²ŸíŒ…?˜ë„ë¡??„í„°ë§?ì¶”ê?
+				// if (PlayerChar->GetTeam() != GetTeam()) 
+				// {
+				FoundTargets.Add(PlayerChar);
+				// }
+			}
+		}
+	}
+
+	return FoundTargets;
+}
+
+APlayerCharacter* APlayerCharacter::SelectBestTarget(const TArray<APlayerCharacter*>& PotentialTargets)
+{
+	if (PotentialTargets.Num() == 0)
+	{
+		return nullptr;
+	}
+
+	// ?€ê²?? íƒ ê¸°ì?:
+	// 1. ?°ì„ ?œìœ„: ???œì•¼ê°??ˆì— ?ˆëŠ” ??
+	// 2. ê±°ë¦¬: ê°€??ê°€ê¹Œìš´ ??
+
+	APlayerCharacter* BestTarget = nullptr;
+	float BestScore = -1.0f;
+
+	FVector Forward = GetActorForwardVector();
+	FVector ActorLocation = GetActorLocation();
+
+	const float ViewAngleCos = FMath::Cos(FMath::DegreesToRadians(60.0f)); // 60???œì•¼ê°?
+	const float ViewAngleWeight = 2.0f; // ?œì•¼ê°????ì— ê°€ì¤‘ì¹˜
+
+	for (APlayerCharacter* Target : PotentialTargets)
+	{
+		if (!Target) { continue; }
+
+		FVector ToTarget = Target->GetActorLocation() - ActorLocation;
+		float Distance = ToTarget.Size();
+
+		float DistanceScore = 1.0f / FMath::Max(Distance, 1.0f); // ê±°ë¦¬??ë°˜ë¹„ë¡€?˜ëŠ” ?ìˆ˜ ê³„ì‚° (ê°€ê¹Œìš¸?˜ë¡ ?’ìŒ)
+
+		ToTarget.Normalize(); // ë°©í–¥ ?•ê·œ??
+
+		float DotProduct = FVector::DotProduct(Forward, ToTarget); // ?„ë°© ë²¡í„°?€ ?€ê²?ë°©í–¥ ë²¡í„°???´ì  ê³„ì‚°
+
+		float AngleScore = DotProduct > ViewAngleCos ? ViewAngleWeight : 1.0f; // ?œì•¼ê°??ˆì— ?ˆëŠ”ì§€ ?•ì¸ (DotProduct > ViewAngleCosë©??œì•¼ê°??ˆì— ?ˆìŒ)
+
+		float FinalScore = DistanceScore * AngleScore; // ìµœì¢… ?ìˆ˜ ê³„ì‚°
+
+		// ??ì¢‹ì? ?ìˆ˜???€ê²Ÿì´ë©?ê°±ì‹ 
+		if (FinalScore > BestScore)
+		{
+			BestScore = FinalScore;
+			BestTarget = Target;
+		}
+	}
+	return BestTarget;
+}

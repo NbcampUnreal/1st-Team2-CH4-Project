@@ -1,5 +1,4 @@
-﻿
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "PlayerCharacter.h"
@@ -19,6 +18,7 @@ protected:
 	void Skill(const FInputActionValue& Value) override; // W키 스킬 : 쥐구멍
 	void Ultimate(const FInputActionValue& Value) override; // R키 궁극기 : 1등 난타
 
+protected:
 	// ===========
 	// W Skill Asset
 	// ===========
@@ -61,6 +61,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RatKnight Skill")
 	USoundBase* RatUltimateSound;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RatKnight Skill")
+	UNiagaraSystem* RatPoisonNiagaraEffect;
+
 public:
 	virtual void BeginPlay() override;
 
@@ -80,6 +83,10 @@ private:
 	FTimerHandle StealthTimerHandle;
 	float StealthDuration = 5.0f;
 
-	// 임시 타게팅 함수 (로직 구현 필요)
-	APlayerCharacter* GetTargetPlayer();
+// ===========
+//  디버그 함수
+// ===========
+public:
+	UFUNCTION(BlueprintCallable, Category = "Debug")
+	void DebugPrintTargetBuffs(APlayerCharacter* Target) const;
 };

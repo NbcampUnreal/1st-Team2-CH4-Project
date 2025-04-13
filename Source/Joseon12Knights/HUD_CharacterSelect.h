@@ -3,14 +3,15 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "GS_FighterState.h" 
-#include "PC_MenuController.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
+#include "Kismet/GameplayStatics.h"
 #include "HUD_CharacterSelect.generated.h"
 
 class UHUD_CharacterSelectTile;
 class UHUD_CharacterSelectPanel;
 class UButton;
+class APC_MenuController;
 
 UCLASS()
 class JOSEON12KNIGHTS_API UHUD_CharacterSelect : public UUserWidget
@@ -26,6 +27,18 @@ public:
 
 protected:
 
+    UPROPERTY(meta = (BindWidgetAnim), Transient)
+    UWidgetAnimation* PressStartAnim;
+
+    bool bPressStartPlayed = false;
+
+    TMap<FString, TArray<int32>> CharacterSelections;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+    USoundBase* BlockedSound;
+
+    UPROPERTY(meta = (BindWidget)) UTextBlock* PressStart;
+
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_1;
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_2;
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_3;
@@ -35,11 +48,7 @@ protected:
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_7;
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectTile* CharacterPannel_8;
 
-    TMap<FString, TArray<int32>> CharacterSelections;
-
-    
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectPanel* Pannel1;
-
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectPanel* Pannel2;
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectPanel* Pannel3;
     UPROPERTY(meta = (BindWidget)) UHUD_CharacterSelectPanel* Pannel4;
@@ -60,6 +69,10 @@ protected:
     UPROPERTY(meta = (BindWidget))
     UTextBlock* CPU;
 
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* Hard;
+
+
     UFUNCTION(BlueprintCallable)
     void OnCpuUp();
 
@@ -77,6 +90,10 @@ protected:
     FString GetAvailableRandomID();
 
     void ApplyCpuCharacterToPanel(int32 CpuIndex, const FString& ID);
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+    TMap<FString, USoundBase*> CharacterSelectSounds;
+
 
     UFUNCTION()
     void OnBackClicked();
