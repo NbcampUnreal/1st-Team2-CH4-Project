@@ -3,14 +3,14 @@
 #include "GS_FighterState.h"
 #include "PS_FighterPlayerState.h"
 #include "BP_LobbyCharacter.h"
+#include "GameFramework/PlayerStart.h"
+#include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
-#include "TimerManager.h"
 
 void AGM_LobbyMode::BeginPlay()
 {
     Super::BeginPlay();
     GameInstance = Cast<UGI_GameCoreInstance>(GetGameInstance());
-    SpawnedCount = 0;
 }
 
 void AGM_LobbyMode::Tick(float DeltaSeconds)
@@ -38,45 +38,61 @@ void AGM_LobbyMode::Tick(float DeltaSeconds)
     if (bAllReady && GS->PlayerArray.Num() > 0)
     {
         bStartClosed = true;
-        UE_LOG(LogTemp, Warning, TEXT("✅ All players ready. Starting match..."));
         StartMatch();
     }
+}
+
+AActor* AGM_LobbyMode::ChoosePlayerStart_Implementation(AController* Player)
+{
+    int32 PlayerIndex = GetNumPlayers() - 1;
+    PlayerNumberMap.Add(Player, PlayerIndex);
+
+    FString StartName = PlayerIndex == 0 ? TEXT("PlayerStart") : FString::Printf(TEXT("PlayerStart%d"), PlayerIndex + 1);
+
+    for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+    {
+        if (It->GetName().Equals(StartName, ESearchCase::IgnoreCase))
+        {
+            return *It;
+        }
+    }
+
+    UE_LOG(LogTemp, Error, TEXT("❌ PlayerStart named %s not found!"), *StartName);
+    return Super::ChoosePlayerStart_Implementation(Player);
 }
 
 void AGM_LobbyMode::PostLogin(APlayerController* NewPlayer)
 {
     Super::PostLogin(NewPlayer);
 
-    if (!NewPlayer || !NewPlayer->PlayerState) return;
+    int32 PlayerIndex = PlayerNumberMap.Contains(NewPlayer) ? PlayerNumberMap[NewPlayer] : 0;
+    FString CharacterKey = FString::FromInt(PlayerIndex + 1); // "1", "2", "3", "4"
 
-    FString CharacterID = "1";
-    if (APS_FighterPlayerState* PS = Cast<APS_FighterPlayerState>(NewPlayer->PlayerState))
+    if (!CharacterBPMap.Contains(CharacterKey))
     {
-        if (!PS->SelectedCharacterID.IsEmpty())
-        {
-            CharacterID = PS->SelectedCharacterID;
-        }
-    }
-
-    if (!CharacterBPMap.Contains(CharacterID))
-    {
-        UE_LOG(LogTemp, Error, TEXT("❌ No blueprint found for CharacterID: %s"), *CharacterID);
+        UE_LOG(LogTemp, Error, TEXT("❌ No blueprint found for CharacterKey: %s"), *CharacterKey);
         return;
     }
 
-    TSubclassOf<AActor> BPClass = CharacterBPMap[CharacterID];
-    FVector SpawnLocation = FVector(0.f, SpawnedCount * 200.f, 100.f);
-    FRotator SpawnRotation = FRotator::ZeroRotator;
+    TSubclassOf<AActor> BPClass = CharacterBPMap[CharacterKey];
+
+    AActor* PlayerStart = ChoosePlayerStart(NewPlayer);
+    if (!PlayerStart)
+    {
+        UE_LOG(LogTemp, Error, TEXT("❌ No PlayerStart found for PlayerIndex %d"), PlayerIndex);
+        return;
+    }
+
+    FVector SpawnLocation = PlayerStart->GetActorLocation();
+    FRotator SpawnRotation = PlayerStart->GetActorRotation();
 
     AActor* SpawnedChar = GetWorld()->SpawnActor<AActor>(BPClass, SpawnLocation, SpawnRotation);
     if (ABP_LobbyCharacter* LobbyChar = Cast<ABP_LobbyCharacter>(SpawnedChar))
     {
-        LobbyChar->SetPlayerIndex(SpawnedCount);
+        LobbyChar->SetPlayerIndex(PlayerIndex);
         LobbyChar->SetIsLocal(NewPlayer->IsLocalController());
         SpawnedLobbyCharacters.Add(LobbyChar);
     }
-
-    SpawnedCount++;
 }
 
 void AGM_LobbyMode::StartMatch()
@@ -90,16 +106,6 @@ void AGM_LobbyMode::StartMatch()
     UE_LOG(LogTemp, Log, TEXT("🚀 캐릭터 셀렉트 상태로 진입"));
 }
 
-void AGM_LobbyMode::Server_UpdatePlayers_Implementation(int32 NumPlayers)
-{
-    UE_LOG(LogTemp, Log, TEXT("📡 Server_UpdatePlayers_Implementation: %d players"), NumPlayers);
-}
-
-void AGM_LobbyMode::Client_UpdatePlayers_Implementation(int32 NumPlayers)
-{
-    UE_LOG(LogTemp, Log, TEXT("📡 Client_UpdatePlayers_Implementation: %d players"), NumPlayers);
-}
-
 void AGM_LobbyMode::Server_SetReady_Implementation(APlayerController* PC)
 {
     if (PC && PC->PlayerState)
@@ -111,3 +117,5 @@ void AGM_LobbyMode::Server_SetReady_Implementation(APlayerController* PC)
         }
     }
 }
+
+

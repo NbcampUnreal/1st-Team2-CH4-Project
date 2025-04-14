@@ -47,6 +47,9 @@ void UCP_UIController::ShowUI(EUIScreen TargetScreen)
 	case EUIScreen::Online:         
 		TargetClass = OnlineClass;
 		break;
+	case EUIScreen::Join:
+		TargetClass = JoinMenuClass;
+		break;
 	default:
 		return;
 	}

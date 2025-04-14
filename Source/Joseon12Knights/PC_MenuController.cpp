@@ -153,6 +153,25 @@ void APC_MenuController::SelectArcade()
 	}
 }
 
+void APC_MenuController::SelectJoin()
+{
+	if (UGI_GameCoreInstance* GI = GetGI())
+	{
+		GI->SelectedPlayMode = EPlayMode::Online;
+		GI->bIsHost = false; 
+	}
+
+	if (AGS_FighterState* GS = GetGS())
+	{
+		GS->bShowModeSelectUI = false;
+	}
+
+	if (UIController)
+	{
+		UIController->ShowUI(EUIScreen::Join);
+	}
+}
+
 
 void APC_MenuController::OnCharacterSelectConfirmed(int32 NumAI)
 {
@@ -246,3 +265,4 @@ void APC_MenuController::Server_SetReady_Implementation()
 		UE_LOG(LogTemp, Warning, TEXT("Server_SetReady called — bIsReady set to true for %s"), *PS->GetPlayerName());
 	}
 }
+

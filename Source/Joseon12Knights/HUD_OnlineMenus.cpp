@@ -1,6 +1,7 @@
 #include "HUD_OnlineMenus.h"
 #include "Components/Button.h"
 #include "PC_MenuController.h"
+#include "PC_LobbyController.h"
 
 void UHUD_OnlineMenus::NativeConstruct()
 {
@@ -15,20 +16,35 @@ void UHUD_OnlineMenus::NativeConstruct()
     {
         HostButton->OnClicked.AddDynamic(this, &UHUD_OnlineMenus::OnHostClicked);
     }
+
 }
 
 void UHUD_OnlineMenus::OnHostClicked()
 {
-    if (UGI_GameCoreInstance* GI = GetGameInstance<UGI_GameCoreInstance>())
+    if (LobbyMap.IsValid() || LobbyMap.ToSoftObjectPath().IsValid())
     {
-        GI->bIsHost = true;
-        GI->SelectedPlayMode = EPlayMode::Online;
+        // 강제 로딩
+        LobbyMap.LoadSynchronous();
+
+        FString MapName = LobbyMap.GetAssetName();
+
+        if (APlayerController* PC = GetOwningPlayer())
+        {
+            FString Command = FString::Printf(TEXT("open %s?listen"), *MapName);
+            UE_LOG(LogTemp, Warning, TEXT("🔥 Final Command: %s"), *Command);
+            PC->ConsoleCommand(Command);
+        }
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("❌ LobbyMap 설정이 유효하지 않음 또는 경로 불완전"));
     }
 
-    // listen 서버로 로비 맵 오픈
-    UE_LOG(LogTemp, Warning, TEXT("🚀 HostButton clicked — Opening LobbyMap in listen mode"));
-    UGameplayStatics::OpenLevel(this, TEXT("OnlineLobby"), true, TEXT("listen"));
 }
+
+
+
+
 
 void UHUD_OnlineMenus::OnBackClicked()
 {
@@ -42,3 +58,5 @@ void UHUD_OnlineMenus::OnBackClicked()
         }
     }
 }
+
+

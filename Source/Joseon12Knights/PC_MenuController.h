@@ -39,6 +39,8 @@ public:
 	UFUNCTION(Server, Reliable)
 	void Server_SetReady();
 
+	UFUNCTION(BlueprintCallable)
+	void SelectJoin();
 
 	UFUNCTION(BlueprintCallable)
 	void SelectArcade();
@@ -64,4 +66,11 @@ protected:
 
 	UPROPERTY()
 	UCP_UIController* UIController;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UUserWidget> JoinMenuClass;
+
+	UPROPERTY()
+	UUserWidget* JoinMenuWidget;
+
 };

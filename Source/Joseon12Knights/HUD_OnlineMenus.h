@@ -18,7 +18,6 @@ protected:
     UFUNCTION()
     void OnHostClicked();
 
-
     UPROPERTY(meta = (BindWidget))
     class UButton* HostButton;
 
@@ -27,4 +26,8 @@ protected:
 
     UPROPERTY(meta = (BindWidget))
     class UButton* Back;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Maps")
+    TSoftObjectPtr<UWorld> LobbyMap;
+
 };
