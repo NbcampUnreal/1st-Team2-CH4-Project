@@ -131,7 +131,7 @@ public:
 
 	UFUNCTION()
 	void Dash(const FInputActionValue& Value);
-	UFUNCTION(Server, Unreliable)
+	UFUNCTION(Server, Reliable)
 	void ServerDash();
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastDash();
@@ -145,11 +145,19 @@ public:
 	UFUNCTION()
 	void NormalAttack(const FInputActionValue& Value);
 
-	UFUNCTION(Server, Unreliable)
+	UFUNCTION(Server, Reliable)
 	void ServerAttack();
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastAttack();
+
+	UFUNCTION()
+	void Dead();
+
+	UFUNCTION(Server, Reliable)
+	void ServerDead();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastDead();
 
 	UFUNCTION()
 	void BeginAttack();
@@ -167,6 +175,7 @@ public:
 protected:
 	bool bIsGuarding;
 	bool bIsHit;
+	bool bIsDead;
 private:
 	int NormalAttackMontageIndex;
 public:
