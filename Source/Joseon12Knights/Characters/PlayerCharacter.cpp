@@ -437,6 +437,30 @@ void APlayerCharacter::MulticastAttack_Implementation()
 	}
 }
 
+void APlayerCharacter::Dead()
+{
+	ServerDead();
+}
+
+void APlayerCharacter::ServerDead_Implementation()
+{
+	MulticastDead();
+}
+
+void APlayerCharacter::MulticastDead_Implementation()
+{
+	if (bIsHit) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	UAnimMontage* AM = MapAnim["Death"];
+
+	if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
+	{
+		AnimInstance->Montage_Stop(0.1f, AM);
+	}
+}
+
 void APlayerCharacter::BeginAttack()
 {
 	WeaponComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
