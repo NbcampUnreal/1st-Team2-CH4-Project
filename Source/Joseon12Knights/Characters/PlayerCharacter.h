@@ -152,6 +152,12 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastAttack();
 
+	UFUNCTION()
+	void BeginAttack();
+
+	UFUNCTION()
+	void EndAttack();
+
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	float CalculateDamage(float BaseDamage, APlayerCharacter* Attacker);
 
