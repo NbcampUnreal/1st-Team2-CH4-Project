@@ -120,6 +120,13 @@ void UHUD_CharacterSelect::OnBackClicked()
 
 void UHUD_CharacterSelect::NotifyCharacterSelected(const FString& CharacterID, int32 PlayerIndex)
 {
+
+    if (UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance()))
+    {
+        GI->SelectedCharacterID = CharacterID;
+        UE_LOG(LogTemp, Warning, TEXT("✅ 캐릭터 선택 저장됨: %s"), *CharacterID);
+    }
+
     for (auto& Pair : CharacterSelections)
     {
         Pair.Value.Remove(PlayerIndex);
@@ -170,8 +177,10 @@ void UHUD_CharacterSelect::OnCpuUp()
     {
         CpuCount++;
         UpdateCpuText();
+        TArray<FString> AllIDs = { TEXT("1"), TEXT("2"), TEXT("3")};
+        int32 RandIndex = FMath::RandRange(0, AllIDs.Num() - 1);
+        FString RandomID = AllIDs[RandIndex];
 
-        FString RandomID = GetAvailableRandomID();
         ApplyCpuCharacterToPanel(CpuCount, RandomID);
 
         if (UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance()))
@@ -202,7 +211,6 @@ void UHUD_CharacterSelect::OnCpuUp()
             }
         }
     }
-
     else
     {
         if (BlockedSound)
@@ -211,8 +219,8 @@ void UHUD_CharacterSelect::OnCpuUp()
         }
         return;
     }
-
 }
+
 
 
 
