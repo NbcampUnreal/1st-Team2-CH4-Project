@@ -66,6 +66,7 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 	ShieldComponent->SetupAttachment(GetMesh(), FName("ShieldSocket"));
 
 	WeaponComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+	WeaponComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	ShieldComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 
 	UCapsuleComponent* Capsule = GetCapsuleComponent();
@@ -116,18 +117,20 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-	FOnMontageEnded EndDelegate;
-	EndDelegate.BindUObject(this, &APlayerCharacter::Test);
+	//FOnMontageEnded EndDelegate;
+	//EndDelegate.BindLambda([this](UAnimMontage* Montage, bool bInterrupted)
+	//	{
+	//		UE_LOG(LogTemp, Warning, TEXT("Hit Anim End"));
+	//	});
 
 	FString AnimKey = bIsGuarding ? TEXT("GuardHit") : TEXT("Hit");
 
 	UAnimMontage* AM = MapAnim[AnimKey];
-	AnimInstance->Montage_SetEndDelegate(EndDelegate, AM);
+	//AnimInstance->Montage_SetEndDelegate(EndDelegate, AM);
 	if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
 	{
 		AnimInstance->StopAllMontages(1);
 		AnimInstance->Montage_Play(AM);
-		
 	}
 
 	return 0.0f;
@@ -419,9 +422,9 @@ void APlayerCharacter::MulticastAttack_Implementation()
 	int Size = NormalAttackMontages.Num();
 	int PrevIndex = NormalAttackMontageIndex;
 	NormalAttackMontageIndex++;
-	UAnimMontage* NormalAttackMontage = NormalAttackMontages[NormalAttackMontageIndex % Size];
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	UAnimMontage* NormalAttackMontage = NormalAttackMontages[NormalAttackMontageIndex % Size];
 
 	if (AnimInstance && NormalAttackMontage && !AnimInstance->Montage_IsPlaying(NormalAttackMontages[PrevIndex % Size]))
 	{
@@ -433,6 +436,16 @@ void APlayerCharacter::MulticastAttack_Implementation()
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, NormalAttackSound, GetActorLocation());
 	}
+}
+
+void APlayerCharacter::BeginAttack()
+{
+	WeaponComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+}
+
+void APlayerCharacter::EndAttack()
+{
+	WeaponComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 float APlayerCharacter::CalculateDamage(float BaseDamage, APlayerCharacter* Attacker)
