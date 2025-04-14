@@ -8,20 +8,36 @@
 #include "Components/PrimitiveComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
+#include "Animation/AnimInstance.h"
+#include "Animation/AnimMontage.h"
 
 
 // Sets default values
-APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage(nullptr), UltimateMontage(nullptr), DashMontage(nullptr)
+APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMontage(nullptr)
 {
-	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	TMap<FString, FString> MapAnimNamePath;
+	MapAnimNamePath.Add("Hit", "/Game/ModularAnimalKnightsPolyart/Animations/AM_GetHitAnim.AM_GetHitAnim");
+	MapAnimNamePath.Add("Death", "/Game/ModularAnimalKnightsPolyart/Animations/AM_Die.AM_Die");
+	MapAnimNamePath.Add("Guard", "/Game/ModularAnimalKnightsPolyart/Animations/AM_Defend.AM_Defend");
+	MapAnimNamePath.Add("GuardHit", "/Game/ModularAnimalKnightsPolyart/Animations/AM_DefendHit.AM_DefendHit");
+	MapAnimNamePath.Add("Dash", "/Game/ModularAnimalKnightsPolyart/Animations/AM_DashForward.AM_DashForward");
+
+	for (const TPair<FString, FString>& Entry : MapAnimNamePath)
+	{
+		FStringAssetReference AssetRef(Entry.Value);
+		UAnimMontage* LoadedMontage = LoadObject<UAnimMontage>(nullptr, *Entry.Value);
+		if (LoadedMontage)
+		{
+			MapAnim.Add(Entry.Key, LoadedMontage);
+		}
+	}
 	MoveSpeed = 50.f;
 	DashDistance = 2000.f;
 	JumpMaxCount = 2;
 
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> MeshAsset(TEXT("/Game/ModularAnimalKnightsPolyart/Meshes/OneMeshCharacter/RabitSK.RabitSK"));
-	///Game/ModularAnimalKnightsPolyart/Meshes/OneMeshCharacter/RabitSK.RabitSK
 
 	if (MeshAsset.Succeeded())
 	{
@@ -31,6 +47,7 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 	GetMesh()->SetRelativeLocation(FVector(0, 0, -90.f));
 	FRotator CurrentRotation = FRotator(0.f, -90.f, 0.f);
 	GetMesh()->SetWorldRotation(CurrentRotation);
+	GetMesh()->SetIsReplicated(false);
 
 	static ConstructorHelpers::FClassFinder<UAnimInstance> AnimBPClass(TEXT("/Game/Blueprints/Animations/ABP_Character.ABP_Character_C"));
 	if (AnimBPClass.Succeeded())
@@ -38,13 +55,6 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 		GetMesh()->SetAnimInstanceClass(AnimBPClass.Class);
 	}
 
-	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
-	SpringArm->SetupAttachment(RootComponent);
-	SpringArm->TargetArmLength = 300.0f;
-	SpringArm->SetRelativeRotation(FRotator(0.f, -90.f, 0.f));
-
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
 	NormalAttackMontageIndex = 0;
 
 	WeaponComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Weapon"));
@@ -59,9 +69,8 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 	ShieldComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
 
 	UCapsuleComponent* Capsule = GetCapsuleComponent();
-	
 	Capsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	Capsule->SetCollisionObjectType(ECC_Pawn); 
+	Capsule->SetCollisionObjectType(ECC_Pawn);
 	Capsule->SetCollisionResponseToAllChannels(ECR_Ignore);
 	Capsule->SetCollisionResponseToChannel(ECC_Visibility, ECR_Overlap);
 	Capsule->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
@@ -69,45 +78,29 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), GuardMontage
 	Capsule->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	Capsule->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Overlap);
 	Capsule->CanCharacterStepUpOn = ECB_No;
-
 	Capsule->ComponentTags.Add("Player");
 
 	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
 	StatComponent = CreateDefaultSubobject<UStatComponent>(TEXT("StatComponent"));
 
+	GetCharacterMovement()->bOrientRotationToMovement = false;
+	bUseControllerRotationYaw = false;
 }
 
-void APlayerCharacter::Test()
-{
-	UE_LOG(LogTemp, Warning, TEXT("TEST : %s"), *GetName());
-}
 
 void APlayerCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	//if (OtherActor == this) return;
 
-	//if (OtherComp && OtherComp->ComponentHasTag("Player"))
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
-	//}
 }
 
 void APlayerCharacter::OnWeaponOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	//if (OtherActor == this) return;
-
-	//if (OtherComp && OtherComp->ComponentHasTag("Player"))
-	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
-	//}
-	
-
 	if (OtherActor == this) return;
 
 	if (APlayerCharacter* EnemyCharacter = Cast<APlayerCharacter>(OtherActor))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
-		
+
 		UGameplayStatics::ApplyDamage(EnemyCharacter, 50.f, GetController(), this, UDamageType::StaticClass());
 	}
 }
@@ -119,8 +112,23 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 
 	FVector Direction = DamageCauser->GetActorLocation() - GetActorLocation();
 
-	//FVector Direction = GetMesh()->GetRightVector() * DashDistance;
 	LaunchCharacter(-Direction.GetSafeNormal() * KnockBackDistance, true, false);
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	FOnMontageEnded EndDelegate;
+	EndDelegate.BindUObject(this, &APlayerCharacter::Test);
+
+	FString AnimKey = bIsGuarding ? TEXT("GuardHit") : TEXT("Hit");
+
+	UAnimMontage* AM = MapAnim[AnimKey];
+	AnimInstance->Montage_SetEndDelegate(EndDelegate, AM);
+	if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
+	{
+		AnimInstance->StopAllMontages(1);
+		AnimInstance->Montage_Play(AM);
+		
+	}
 
 	return 0.0f;
 }
@@ -145,7 +153,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 	UpdateMovementSpeed();
 }
 
-void APlayerCharacter::UpdateMovementSpeed() // 매 프레임마다 호출되어 이동 속도를 업데이트.
+void APlayerCharacter::UpdateMovementSpeed() // �??�레?�마???�출?�어 ?�동 ?�도�??�데?�트.
 {
 	if (GetCharacterMovement() && BuffComponent)
 	{
@@ -153,6 +161,12 @@ void APlayerCharacter::UpdateMovementSpeed() // 매 프레임마다 호출되어
 		GetCharacterMovement()->MaxWalkSpeed = EffectiveSpeed;
 	}
 }
+
+void APlayerCharacter::Test(UAnimMontage* Montage, bool bInterrupted)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Hit End"));
+}
+
 
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -198,7 +212,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 					PlayerController->RollAction,
 					ETriggerEvent::Started,
 					this,
-					&APlayerCharacter::Roll
+					&APlayerCharacter::Dash
 				);
 			}
 
@@ -256,13 +270,32 @@ void APlayerCharacter::Landed(const FHitResult& Hit)
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
 	float AxisValue = Value.Get<float>();
+	FVector Movement = FVector(AxisValue * MoveSpeed, 0.f, 0.f);
+	AddMovementInput(Movement.GetSafeNormal(), 1.f);
 
-	float Direction = AxisValue < 0 ? 1 : -1;
+	FRotator DesiredRotation = AxisValue < 0 ? FRotator(0.f, 180.f, 0.f) : FRotator(0.f, 0.f, 0.f);
 
-	AddMovementInput(GetActorForwardVector(), AxisValue * MoveSpeed);
+	if (!DesiredRotation.Equals(LastSentRotation, 0.01f))
+	{
+		LastSentRotation = DesiredRotation;
+		SetActorRotation(DesiredRotation);
+		ServerSetDirection(DesiredRotation);
+	}
+}
 
-	FRotator CurrentRotation = FRotator(0.f, Direction * 90.f, 0.f);
-	GetMesh()->SetWorldRotation(CurrentRotation);
+void APlayerCharacter::ServerSetDirection_Implementation(const FRotator& Rotation)
+{
+	MulticastSetDirection(Rotation);
+}
+
+void APlayerCharacter::MulticastSetDirection_Implementation(const FRotator& Rotation)
+{
+	if (!IsLocallyControlled())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Back"));
+		FRotator NormalRotation = Rotation.GetNormalized();
+		SetActorRotation(NormalRotation);
+	}
 }
 
 void APlayerCharacter::StartJump(const FInputActionValue& Value)
@@ -277,7 +310,6 @@ void APlayerCharacter::ServerStartJump_Implementation()
 
 void APlayerCharacter::MulticastStartJump_Implementation()
 {
-	//JumpCount++;
 	if (JumpCurrentCount == 1)
 	{
 		bIsDoubleJump = true;
@@ -285,13 +317,11 @@ void APlayerCharacter::MulticastStartJump_Implementation()
 
 	Jump();
 
-	// 점프 사운드 재생
+
 	if (JumpSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, JumpSound, GetActorLocation());
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Jump %d"), JumpCurrentCount);
 }
 
 void APlayerCharacter::StopJump(const FInputActionValue& Value)
@@ -302,20 +332,28 @@ void APlayerCharacter::StopJump(const FInputActionValue& Value)
 	}
 }
 
-void APlayerCharacter::Roll(const FInputActionValue& Value)
+void APlayerCharacter::Dash(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("ROLL"));
+	ServerDash();
+}
 
+void APlayerCharacter::ServerDash_Implementation()
+{
+	MulticastDash();
+}
+
+void APlayerCharacter::MulticastDash_Implementation()
+{
 	if (UCharacterMovementComponent* MoveComp = Cast<UCharacterMovementComponent>(GetMovementComponent()))
 	{
 		if (!MoveComp->IsFalling())
 		{
 			UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-			if (AnimInstance && DashMontage && !AnimInstance->Montage_IsPlaying(DashMontage))
+			if (AnimInstance && MapAnim["Dash"] && !AnimInstance->Montage_IsPlaying(MapAnim["Dash"]))
 			{
 				AnimInstance->StopAllMontages(1);
-				AnimInstance->Montage_Play(DashMontage);
+				AnimInstance->Montage_Play(MapAnim["Dash"]);
 			}
 
 			FVector Direction = GetMesh()->GetRightVector() * DashDistance;
@@ -326,25 +364,27 @@ void APlayerCharacter::Roll(const FInputActionValue& Value)
 
 void APlayerCharacter::Guard(const FInputActionValue& Value)
 {
-		bool bIsGuard = Value.Get<bool>();
+	bool bIsGuard = Value.Get<bool>();
 
-		UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
+	UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
 
-		// 가드 사운드 재생
-		if (!bIsGuarding && bIsGuard && GuardSound)
-		{
-			UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
-		}
+	// ���� ���
+	if (!bIsGuarding && bIsGuard && GuardSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
+	}
 
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-		if (AnimInstance && GuardMontage && !AnimInstance->Montage_IsPlaying(GuardMontage))
-		{
-			AnimInstance->StopAllMontages(1);
-			AnimInstance->Montage_Play(GuardMontage);
-		}
+	UAnimMontage* AM = MapAnim["Guard"];
 
-		bIsGuarding = true;
+	if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
+	{
+		AnimInstance->StopAllMontages(1);
+		AnimInstance->Montage_Play(AM);
+	}
+
+	bIsGuarding = true;
 }
 
 void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
@@ -356,9 +396,11 @@ void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-	if (AnimInstance && GuardMontage && !AnimInstance->Montage_IsPlaying(GuardMontage))
+	UAnimMontage* AM = MapAnim["Guard"];
+
+	if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
 	{
-		AnimInstance->Montage_Stop(0.1f, GuardMontage);
+		AnimInstance->Montage_Stop(0.1f, AM);
 	}
 }
 
@@ -387,7 +429,6 @@ void APlayerCharacter::MulticastAttack_Implementation()
 		AnimInstance->Montage_Play(NormalAttackMontage);
 	}
 
-	// 일반 공격 사운드 재생
 	if (NormalAttackSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, NormalAttackSound, GetActorLocation());
@@ -411,7 +452,6 @@ float APlayerCharacter::CalculateDamage(float BaseDamage, APlayerCharacter* Atta
 		DefenderMultiplier = DefenderBuff->GetDefenseMultiplier();
 	}
 
-	// 계산: 기본 데미지에 공격자 배율을 곱하고, 방어자 배율로 나누어 최종 데미지를 구함
 	return BaseDamage * AttackerMultiplier / DefenderMultiplier;
 }
 
@@ -420,23 +460,23 @@ float APlayerCharacter::CalculateDamage(float BaseDamage, APlayerCharacter* Atta
 // =============
 APlayerCharacter* APlayerCharacter::GetTargetPlayer()
 {
-	FVector AttackOrigin; // 공격 시작 위치
+	FVector AttackOrigin; // 공격 ?�작 ?�치
 
-	// 무기가 있으면 무기 소켓 위치에서 시작하도록 설정
+	// 무기가 ?�으�?무기 ?�켓 ?�치?�서 ?�작?�도�??�정
 	if (WeaponComponent && WeaponComponent->DoesSocketExist(FName("WeaponSocket")))
 	{
 		AttackOrigin = WeaponComponent->GetSocketLocation(FName("WeaponSocket"));
 	}
-	// 그렇지 않으면 캐릭터 앞쪽에 위치하도록 설정
+	// 그렇지 ?�으�?캐릭???�쪽???�치?�도�??�정
 	else
 	{
 		AttackOrigin = GetActorLocation() + GetActorForwardVector() * ForwardOffset;
 	}
 
-	TArray<APlayerCharacter*> PotentialTargets = FindTargetsInRadius(AttackOrigin, AttackRadius); // 공격 범위 내의 모든 캐릭터를 찾음
-	APlayerCharacter* BestTarget = SelectBestTarget(PotentialTargets); // 가장 적합한 타겟 선택
+	TArray<APlayerCharacter*> PotentialTargets = FindTargetsInRadius(AttackOrigin, AttackRadius); // 공격 범위 ?�의 모든 캐릭?��? 찾음
+	APlayerCharacter* BestTarget = SelectBestTarget(PotentialTargets); // 가???�합???��??�택
 
-	if (bDebugTargeting) // 디버그 시각화
+	if (bDebugTargeting) // ?�버�??�각??
 	{
 		DrawDebugSphere(GetWorld(), AttackOrigin, AttackRadius, 24,
 			BestTarget ? FColor::Green : FColor::Red, false, 1.0f);
@@ -456,27 +496,27 @@ TArray<APlayerCharacter*> APlayerCharacter::FindTargetsInRadius(const FVector& O
 	TArray<APlayerCharacter*> FoundTargets;
 	TArray<FOverlapResult> OverlapResults;
 	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this); // 자신은 제외
+	QueryParams.AddIgnoredActor(this); // ?�신?� ?�외
 
-	// 물체 오버랩 검사 수행
+	// 물체 ?�버??검???�행
 	bool bOverlapFound = GetWorld()->OverlapMultiByObjectType(
 		OverlapResults,
 		Origin,
 		FQuat::Identity,
-		FCollisionObjectQueryParams(TargetCollisionChannel), // 지정된 채널에 대한 검사
+		FCollisionObjectQueryParams(TargetCollisionChannel), // 지?�된 채널???�??검??
 		FCollisionShape::MakeSphere(Radius),
 		QueryParams
 	);
 
 	if (bOverlapFound)
 	{
-		// 오버랩된 APlayerCharacter 타입만 필터링
+		// ?�버?�된 APlayerCharacter ?�?�만 ?�터�?
 		for (const FOverlapResult& Overlap : OverlapResults)
 		{
 			APlayerCharacter* PlayerChar = Cast<APlayerCharacter>(Overlap.GetActor());
 			if (PlayerChar && PlayerChar != this)
 			{
-				// 팀 기능 구현시 다른 팀만 타겟팅하도록 필터링 추가
+				// ?� 기능 구현???�른 ?��??�겟팅?�도�??�터�?추�?
 				// if (PlayerChar->GetTeam() != GetTeam()) 
 				// {
 				FoundTargets.Add(PlayerChar);
@@ -495,9 +535,9 @@ APlayerCharacter* APlayerCharacter::SelectBestTarget(const TArray<APlayerCharact
 		return nullptr;
 	}
 
-	// 타겟 선택 기준:
-	// 1. 우선순위: 내 시야각 안에 있는 적
-	// 2. 거리: 가장 가까운 적
+	// ?��??�택 기�?:
+	// 1. ?�선?�위: ???�야�??�에 ?�는 ??
+	// 2. 거리: 가??가까운 ??
 
 	APlayerCharacter* BestTarget = nullptr;
 	float BestScore = -1.0f;
@@ -505,8 +545,8 @@ APlayerCharacter* APlayerCharacter::SelectBestTarget(const TArray<APlayerCharact
 	FVector Forward = GetActorForwardVector();
 	FVector ActorLocation = GetActorLocation();
 
-	const float ViewAngleCos = FMath::Cos(FMath::DegreesToRadians(60.0f)); // 60도 시야각
-	const float ViewAngleWeight = 2.0f; // 시야각 내 적에 가중치
+	const float ViewAngleCos = FMath::Cos(FMath::DegreesToRadians(60.0f)); // 60???�야�?
+	const float ViewAngleWeight = 2.0f; // ?�야�????�에 가중치
 
 	for (APlayerCharacter* Target : PotentialTargets)
 	{
@@ -515,17 +555,17 @@ APlayerCharacter* APlayerCharacter::SelectBestTarget(const TArray<APlayerCharact
 		FVector ToTarget = Target->GetActorLocation() - ActorLocation;
 		float Distance = ToTarget.Size();
 
-		float DistanceScore = 1.0f / FMath::Max(Distance, 1.0f); // 거리에 반비례하는 점수 계산 (가까울수록 높음)
+		float DistanceScore = 1.0f / FMath::Max(Distance, 1.0f); // 거리??반비례?�는 ?�수 계산 (가까울?�록 ?�음)
 
-		ToTarget.Normalize(); // 방향 정규화
+		ToTarget.Normalize(); // 방향 ?�규??
 
-		float DotProduct = FVector::DotProduct(Forward, ToTarget); // 전방 벡터와 타겟 방향 벡터의 내적 계산
+		float DotProduct = FVector::DotProduct(Forward, ToTarget); // ?�방 벡터?� ?��?방향 벡터???�적 계산
 
-		float AngleScore = DotProduct > ViewAngleCos ? ViewAngleWeight : 1.0f; // 시야각 안에 있는지 확인 (DotProduct > ViewAngleCos면 시야각 안에 있음)
+		float AngleScore = DotProduct > ViewAngleCos ? ViewAngleWeight : 1.0f; // ?�야�??�에 ?�는지 ?�인 (DotProduct > ViewAngleCos�??�야�??�에 ?�음)
 
-		float FinalScore = DistanceScore * AngleScore; // 최종 점수 계산
+		float FinalScore = DistanceScore * AngleScore; // 최종 ?�수 계산
 
-		// 더 좋은 점수의 타겟이면 갱신
+		// ??좋�? ?�수???�겟이�?갱신
 		if (FinalScore > BestScore)
 		{
 			BestScore = FinalScore;

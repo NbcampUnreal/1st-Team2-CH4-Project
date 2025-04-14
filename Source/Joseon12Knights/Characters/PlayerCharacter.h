@@ -25,8 +25,6 @@ public:
 	APlayerCharacter();
 
 protected:
-	UFUNCTION()
-	void Test();
 
 	UFUNCTION()
 	void OnCapsuleOverlap(
@@ -55,7 +53,12 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated)
 	bool bIsDoubleJump;
+
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool bIsHit;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float MoveSpeed;
@@ -70,19 +73,7 @@ protected:
 	UAnimMontage* SkillAttackMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	UAnimMontage* GuardMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimMontage* UltimateMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	UAnimMontage* DashMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
-	UCameraComponent* Camera;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
-	USpringArmComponent* SpringArm;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment")
 	UStaticMeshComponent* WeaponComponent;
@@ -105,12 +96,13 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
 	UStatComponent* StatComponent;
 
+	FRotator LastSentRotation;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Animation")
+	TMap<FString, UAnimMontage*> MapAnim;
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
+public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -120,20 +112,30 @@ public:
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
+	UFUNCTION(Server, Unreliable)
+	void ServerSetDirection(const FRotator& Rotation);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastSetDirection(const FRotator& Rotation);
+
 	UFUNCTION()
 	void StartJump(const FInputActionValue& Value);
 
-	UFUNCTION(Server, Unreliable)
+	UFUNCTION(Server, Reliable)
 	void ServerStartJump();
 
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void MulticastStartJump();
 
 	UFUNCTION()
 	void StopJump(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void Roll(const FInputActionValue& Value);
+	void Dash(const FInputActionValue& Value);
+	UFUNCTION(Server, Unreliable)
+	void ServerDash();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastDash();
 
 	UFUNCTION()
 	void Guard(const FInputActionValue& Value);
@@ -147,7 +149,7 @@ public:
 	UFUNCTION(Server, Unreliable)
 	void ServerAttack();
 
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void MulticastAttack();
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
@@ -163,9 +165,9 @@ protected:
 private:
 	int NormalAttackMontageIndex;
 
-// ==============
-// Targeting Logic
-// ==============
+	// ==============
+	// Targeting Logic
+	// ==============
 public:
 	UPROPERTY(EditAnywhere, Category = "Targeting")
 	float AttackRadius = 106.0f;  // 공격 감지 반경
@@ -192,5 +194,8 @@ protected:
 	// 이동속도 업데이트
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void UpdateMovementSpeed();
+
+	UFUNCTION()
+	void Test(UAnimMontage* Montage, bool bInterrupted);
 
 };
