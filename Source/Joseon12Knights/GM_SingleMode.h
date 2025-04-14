@@ -1,4 +1,3 @@
-// GM_SingleMode.h
 #pragma once
 
 #include "CoreMinimal.h"
@@ -11,7 +10,11 @@ class JOSEON12KNIGHTS_API AGM_SingleMode : public AGM_BaseMode
 	GENERATED_BODY()
 
 public:
+	AGM_SingleMode();
+
 	virtual void BeginPlay() override;
 
-	virtual void ProceedToMatch() override;
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character")
+	TMap<FString, TSubclassOf<APawn>> CharacterBPMap;
 };

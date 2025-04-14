@@ -31,13 +31,13 @@ void UHUD_OnlineMenus::OnHostClicked()
         if (APlayerController* PC = GetOwningPlayer())
         {
             FString Command = FString::Printf(TEXT("open %s?listen"), *MapName);
-            UE_LOG(LogTemp, Warning, TEXT("🔥 Final Command: %s"), *Command);
+            UE_LOG(LogTemp, Warning, TEXT("Final Command: %s"), *Command);
             PC->ConsoleCommand(Command);
         }
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("❌ LobbyMap 설정이 유효하지 않음 또는 경로 불완전"));
+        UE_LOG(LogTemp, Error, TEXT("LobbyMap 설정이 유효하지 않음 또는 경로 불완전"));
     }
 
 }

@@ -68,11 +68,14 @@ void APC_MenuController::OnCharacterSelectEnterPressed()
 
 			if (bCharacterSelected && bHasAI)
 			{
+				OnCharacterSelectConfirmed(GI->SelectedCpuCount);
+
 				UIController->ShowUI(EUIScreen::MapSelect);
 			}
 		}
 	}
 }
+
 
 void APC_MenuController::OnCharacterStoryEnterPressed()
 {
@@ -197,8 +200,13 @@ void APC_MenuController::OnCharacterSelectConfirmed(int32 NumAI)
 				FPlayerLobbyInfo AI;
 				AI.PlayerName = FString::Printf(TEXT("AI_%d"), i + 1);
 				AI.bIsReady = true;
-				AI.SelectedCharacterID = TEXT("RandomAI");
-				GI->PlayerLobbyInfos.Add(AI);
+
+				AI.SelectedCharacterID = GI->CpuCharacterIDs.IsValidIndex(i)
+					? GI->CpuCharacterIDs[i]
+					: TEXT("1");  
+
+					GI->PlayerLobbyInfos.Add(AI);
+
 			}
 
 			if (AGM_SingleMode* GM = Cast<AGM_SingleMode>(UGameplayStatics::GetGameMode(this)))
@@ -215,6 +223,7 @@ void APC_MenuController::OnCharacterSelectConfirmed(int32 NumAI)
 		}
 	}
 }
+
 
 void APC_MenuController::HandleBackToCharacterSelect()
 {

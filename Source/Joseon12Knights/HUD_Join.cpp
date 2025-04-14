@@ -21,9 +21,6 @@ void UHUD_Join::PopulateRoomList(const TArray<FString>& RoomNames)
         UUserWidget* RoomTile = CreateWidget<UUserWidget>(this, RoomTileClass);
         if (!RoomTile) continue;
 
-        // 예: Tile에 텍스트 설정 로직이 있다면 여기에 추가
-        // e.g., Cast<UJoinRoomTile>(RoomTile)->Setup(RoomName);
-
         RoomListBox->AddChild(RoomTile);
     }
 }
