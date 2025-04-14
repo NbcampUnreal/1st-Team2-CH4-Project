@@ -57,8 +57,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	bool bIsHit;
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float MoveSpeed;
@@ -167,14 +166,15 @@ public:
 	virtual void Ultimate(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Ultimate, );
 protected:
 	bool bIsGuarding;
-
+	bool bIsHit;
 private:
 	int NormalAttackMontageIndex;
-
+public:
+	UFUNCTION()
+	void SetHitState(bool bIsHit);
 	// ==============
 	// Targeting Logic
 	// ==============
-public:
 	UPROPERTY(EditAnywhere, Category = "Targeting")
 	float AttackRadius = 106.0f;  // 공격 감지 반경
 

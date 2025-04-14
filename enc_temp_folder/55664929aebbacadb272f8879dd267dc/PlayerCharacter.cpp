@@ -108,7 +108,7 @@ void APlayerCharacter::OnWeaponOverlap(UPrimitiveComponent* OverlappedComp, AAct
 
 float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	if (bIsHit) return 0.0f;
+	UE_LOG(LogTemp, Warning, TEXT("Take Damage"));
 	float KnockBackDistance = bIsGuarding ? 500.f : 1000.f;
 
 	FVector Direction = DamageCauser->GetActorLocation() - GetActorLocation();
@@ -260,12 +260,12 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 void APlayerCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
+	UE_LOG(LogTemp, Warning, TEXT("Land"));
 	bIsDoubleJump = false;
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
 	float AxisValue = Value.Get<float>();
 	FVector Movement = FVector(AxisValue * MoveSpeed, 0.f, 0.f);
 	AddMovementInput(Movement.GetSafeNormal(), 1.f);
@@ -297,7 +297,6 @@ void APlayerCharacter::MulticastSetDirection_Implementation(const FRotator& Rota
 
 void APlayerCharacter::StartJump(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
 	ServerStartJump();
 }
 
@@ -332,7 +331,6 @@ void APlayerCharacter::StopJump(const FInputActionValue& Value)
 
 void APlayerCharacter::Dash(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
 	ServerDash();
 }
 
@@ -363,7 +361,6 @@ void APlayerCharacter::MulticastDash_Implementation()
 
 void APlayerCharacter::Guard(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
 	bool bIsGuard = Value.Get<bool>();
 
 	UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
@@ -389,7 +386,6 @@ void APlayerCharacter::Guard(const FInputActionValue& Value)
 
 void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
 	bool bIsGuard = Value.Get<bool>();
 	bIsGuarding = false;
 
@@ -407,7 +403,6 @@ void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 
 void APlayerCharacter::NormalAttack(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
 	ServerAttack();
 }
 
