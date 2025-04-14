@@ -20,17 +20,23 @@ public:
     UFUNCTION(Client, Reliable)
     void Client_UpdatePlayers(int32 NumPlayers);
 
-
     UFUNCTION(Server, Reliable)
     void Server_SetReady(APlayerController* PC);
-
 
     UFUNCTION(BlueprintCallable)
     void StartMatch();  // 맵 이동 처리
 
-    bool bStartClosed = false;
 protected:
     UPROPERTY()
     class UGI_GameCoreInstance* GameInstance;
 
+    UPROPERTY(EditAnywhere, Category = "Lobby")
+    TMap<FString, TSubclassOf<AActor>> CharacterBPMap;  // ✅ 캐릭터 ID → 블루프린트
+
+    UPROPERTY()
+    TArray<AActor*> SpawnedLobbyCharacters;
+
+    int32 SpawnedCount = 0;
+
+    bool bStartClosed = false;
 };

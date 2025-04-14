@@ -1,16 +1,16 @@
 #include "GM_LobbyMode.h"
 #include "GI_GameCoreInstance.h"
-#include "Kismet/GameplayStatics.h"
 #include "GS_FighterState.h"
 #include "PS_FighterPlayerState.h"
-#include "EngineUtils.h"
+#include "BP_LobbyCharacter.h"
+#include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
 void AGM_LobbyMode::BeginPlay()
 {
     Super::BeginPlay();
-
     GameInstance = Cast<UGI_GameCoreInstance>(GetGameInstance());
+    SpawnedCount = 0;
 }
 
 void AGM_LobbyMode::Tick(float DeltaSeconds)
@@ -38,7 +38,7 @@ void AGM_LobbyMode::Tick(float DeltaSeconds)
     if (bAllReady && GS->PlayerArray.Num() > 0)
     {
         bStartClosed = true;
-        UE_LOG(LogTemp, Warning, TEXT("All players ready. Starting match..."));
+        UE_LOG(LogTemp, Warning, TEXT("✅ All players ready. Starting match..."));
         StartMatch();
     }
 }
@@ -47,13 +47,36 @@ void AGM_LobbyMode::PostLogin(APlayerController* NewPlayer)
 {
     Super::PostLogin(NewPlayer);
 
-    FTimerHandle TempHandle;
-    GetWorldTimerManager().SetTimer(TempHandle, [this]()
+    if (!NewPlayer || !NewPlayer->PlayerState) return;
+
+    FString CharacterID = "1";
+    if (APS_FighterPlayerState* PS = Cast<APS_FighterPlayerState>(NewPlayer->PlayerState))
     {
-        int32 NumPlayers = GetNumPlayers();
-        UE_LOG(LogTemp, Log, TEXT("Player joined. Total Players: %d"), NumPlayers);
-        // 필요하면 GameState를 통해 클라에 동기화 가능
-    }, 0.1f, false);
+        if (!PS->SelectedCharacterID.IsEmpty())
+        {
+            CharacterID = PS->SelectedCharacterID;
+        }
+    }
+
+    if (!CharacterBPMap.Contains(CharacterID))
+    {
+        UE_LOG(LogTemp, Error, TEXT("❌ No blueprint found for CharacterID: %s"), *CharacterID);
+        return;
+    }
+
+    TSubclassOf<AActor> BPClass = CharacterBPMap[CharacterID];
+    FVector SpawnLocation = FVector(0.f, SpawnedCount * 200.f, 100.f);
+    FRotator SpawnRotation = FRotator::ZeroRotator;
+
+    AActor* SpawnedChar = GetWorld()->SpawnActor<AActor>(BPClass, SpawnLocation, SpawnRotation);
+    if (ABP_LobbyCharacter* LobbyChar = Cast<ABP_LobbyCharacter>(SpawnedChar))
+    {
+        LobbyChar->SetPlayerIndex(SpawnedCount);
+        LobbyChar->SetIsLocal(NewPlayer->IsLocalController());
+        SpawnedLobbyCharacters.Add(LobbyChar);
+    }
+
+    SpawnedCount++;
 }
 
 void AGM_LobbyMode::StartMatch()
@@ -64,19 +87,17 @@ void AGM_LobbyMode::StartMatch()
         GS->MatchPhase = EMatchPhase::CharacterSelect;
     }
 
-    UE_LOG(LogTemp, Log, TEXT("캐릭터 셀렉트 상태로 진입"));
+    UE_LOG(LogTemp, Log, TEXT("🚀 캐릭터 셀렉트 상태로 진입"));
 }
 
 void AGM_LobbyMode::Server_UpdatePlayers_Implementation(int32 NumPlayers)
 {
-    // Manager 제거되었으므로 비워두거나 GameState로 구현할 것
-    UE_LOG(LogTemp, Log, TEXT("Server_UpdatePlayers_Implementation called. NumPlayers: %d"), NumPlayers);
+    UE_LOG(LogTemp, Log, TEXT("📡 Server_UpdatePlayers_Implementation: %d players"), NumPlayers);
 }
 
 void AGM_LobbyMode::Client_UpdatePlayers_Implementation(int32 NumPlayers)
 {
-    // Manager 제거되었으므로 비워두거나 UI 갱신용 GameState 활용 가능
-    UE_LOG(LogTemp, Log, TEXT("Client_UpdatePlayers_Implementation called. NumPlayers: %d"), NumPlayers);
+    UE_LOG(LogTemp, Log, TEXT("📡 Client_UpdatePlayers_Implementation: %d players"), NumPlayers);
 }
 
 void AGM_LobbyMode::Server_SetReady_Implementation(APlayerController* PC)
@@ -86,7 +107,7 @@ void AGM_LobbyMode::Server_SetReady_Implementation(APlayerController* PC)
         if (APS_FighterPlayerState* FighterPS = Cast<APS_FighterPlayerState>(PC->PlayerState))
         {
             FighterPS->bIsReady = true;
-            UE_LOG(LogTemp, Log, TEXT("%s is now ready"), *FighterPS->GetPlayerName());
+            UE_LOG(LogTemp, Log, TEXT("✅ %s is now ready"), *FighterPS->GetPlayerName());
         }
     }
 }
