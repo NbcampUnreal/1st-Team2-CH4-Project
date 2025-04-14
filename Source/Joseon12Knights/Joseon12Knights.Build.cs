@@ -16,7 +16,10 @@ public class Joseon12Knights : ModuleRules
             "UMG",
             "Slate",
             "SlateCore",
-            "EnhancedInput"
+            "EnhancedInput",
+            "NavigationSystem",  
+            "AIModule", 
+            "GamePlayTasks"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] { });
