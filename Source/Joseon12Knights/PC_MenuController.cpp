@@ -113,6 +113,27 @@ void APC_MenuController::SelectVS()
 	}
 }
 
+void APC_MenuController::SelectOnline()
+{
+	if (UGI_GameCoreInstance* GI = GetGI())
+	{
+		GI->SelectedPlayMode = EPlayMode::Online;
+		GI->bIsHost = true;
+	}
+
+	if (AGS_FighterState* GS = GetGS())
+	{
+		GS->bShowModeSelectUI = false;
+	}
+
+	if (UIController)
+	{
+		UIController->ShowUI(EUIScreen::Online); 
+	}
+}
+
+
+
 void APC_MenuController::SelectArcade()
 {
 	if (UGI_GameCoreInstance* GI = GetGI())
@@ -213,4 +234,15 @@ AGS_FighterState* APC_MenuController::GetGS() const
 UGI_GameCoreInstance* APC_MenuController::GetGI() const
 {
 	return GetGameInstance<UGI_GameCoreInstance>();
+}
+
+
+void APC_MenuController::Server_SetReady_Implementation()
+{
+	if (APS_FighterPlayerState* PS = GetPlayerState<APS_FighterPlayerState>())
+	{
+		PS->bIsReady = true;
+
+		UE_LOG(LogTemp, Warning, TEXT("Server_SetReady called — bIsReady set to true for %s"), *PS->GetPlayerName());
+	}
 }

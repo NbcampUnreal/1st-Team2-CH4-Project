@@ -44,6 +44,9 @@ void UCP_UIController::ShowUI(EUIScreen TargetScreen)
 	case EUIScreen::CharacterStory:
 		TargetClass = CharacterStoryClass;
 		break;
+	case EUIScreen::Online:         
+		TargetClass = OnlineClass;
+		break;
 	default:
 		return;
 	}

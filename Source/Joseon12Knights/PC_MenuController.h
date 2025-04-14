@@ -12,6 +12,7 @@
 #include "HUD_CharacterSelect.h"
 #include "HUD_CharacterStory.h"
 #include "GI_GameCoreInstance.h"
+#include "PS_FighterPlayerState.h"
 #include "PC_MenuController.generated.h"
 
 UCLASS()
@@ -31,6 +32,13 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void SelectVS();
+
+	UFUNCTION(BlueprintCallable)
+	void SelectOnline();
+
+	UFUNCTION(Server, Reliable)
+	void Server_SetReady();
+
 
 	UFUNCTION(BlueprintCallable)
 	void SelectArcade();

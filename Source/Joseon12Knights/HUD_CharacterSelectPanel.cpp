@@ -4,7 +4,6 @@
 
 void UHUD_CharacterSelectPanel::SetCharacter(const FString& CharacterID, const FString& PlayerID)
 {
-
     if (Name)
         Name->SetText(FText::FromString(CharacterID));
 
@@ -13,6 +12,7 @@ void UHUD_CharacterSelectPanel::SetCharacter(const FString& CharacterID, const F
 
     if (!CharacterImage)
     {
+        UE_LOG(LogTemp, Error, TEXT("❌ CharacterImage is null"));
         return;
     }
 
@@ -27,7 +27,13 @@ void UHUD_CharacterSelectPanel::SetCharacter(const FString& CharacterID, const F
             Brush.ImageSize = FVector2D(256.f, 256.f);
             CharacterImage->SetBrush(Brush);
         }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("❌ FoundTexture is null for CharacterID: %s"), *CharacterID);
+        }
     }
-
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("❌ CharacterIconMap missing CharacterID: %s"), *CharacterID);
+    }
 }
-
