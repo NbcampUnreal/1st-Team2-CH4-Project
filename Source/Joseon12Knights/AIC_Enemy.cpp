@@ -30,7 +30,7 @@ void AAIC_Enemy::RandomMove()
 	auto* ControlledPawn = GetPawn();
 	if (!ControlledPawn)
 		return;
-
+	
 	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetNavigationSystem(GetWorld());
 	if (!NavSystem)
 		return;
