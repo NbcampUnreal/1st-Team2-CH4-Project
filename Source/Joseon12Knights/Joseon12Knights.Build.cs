@@ -17,6 +17,9 @@ public class Joseon12Knights : ModuleRules
             "Slate",
             "SlateCore",
             "EnhancedInput",
+            "NavigationSystem",  
+            "AIModule", 
+            "GamePlayTasks",
             "Niagara"
         });
 
