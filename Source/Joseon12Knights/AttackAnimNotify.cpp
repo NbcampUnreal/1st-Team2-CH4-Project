@@ -10,8 +10,7 @@ void UAttackAnimNotify::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBa
 {
     if (APlayerCharacter* Character = Cast<APlayerCharacter>(MeshComp->GetOwner()))
     {
-        //Character->HandleAttackHit();  // 캐릭터에 함수 만들어서 호출
-        //UE_LOG(LogTemp, Warning, TEXT("Hit"));
+        
     }
 }
 
