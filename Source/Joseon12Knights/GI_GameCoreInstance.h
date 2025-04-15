@@ -64,4 +64,8 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	bool bIsHost;
+
+	UPROPERTY(BlueprintReadWrite)
+	TArray<bool> ReadyArray;
+
 };

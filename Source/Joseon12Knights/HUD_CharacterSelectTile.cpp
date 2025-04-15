@@ -17,6 +17,10 @@ void UHUD_CharacterSelectTile::NativeConstruct()
 
     if (Port && PortraitTexture)
         Port->SetBrushFromTexture(PortraitTexture);
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("Port or PortraitTexture is null in CharacterSelectTile (%s)"), *CharacterID);
+    }
 }
 
 void UHUD_CharacterSelectTile::SetupCharacterTile(const FString& InCharacterID)

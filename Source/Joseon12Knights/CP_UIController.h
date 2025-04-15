@@ -12,6 +12,8 @@ enum class EUIScreen : uint8
 	CharacterSelect,
 	MapSelect,
 	CharacterStory,
+	Online,
+	Join,
 	Result
 };
 
@@ -47,6 +49,11 @@ public:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<UUserWidget> CharacterStoryClass;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UUserWidget> OnlineClass; 
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UUserWidget> JoinMenuClass;
 
 private:
 	UPROPERTY()
