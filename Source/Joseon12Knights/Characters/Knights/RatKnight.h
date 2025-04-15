@@ -1,5 +1,4 @@
-﻿
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "PlayerCharacter.h"
@@ -18,27 +17,6 @@ class JOSEON12KNIGHTS_API ARatKnight : public APlayerCharacter
 protected:
 	void Skill(const FInputActionValue& Value) override; // W키 스킬 : 쥐구멍
 	void Ultimate(const FInputActionValue& Value) override; // R키 궁극기 : 1등 난타
-
-private:
-	// ==============
-	// Targeting Logic
-	// ==============
-	UPROPERTY(EditAnywhere, Category = "Targeting")
-	float AttackRadius = 104.0f;  // 공격 감지 반경
-
-	UPROPERTY(EditAnywhere, Category = "Targeting")
-	float ForwardOffset = 104.0f; // 전방 오프셋 거리
-
-	UPROPERTY(EditAnywhere, Category = "Targeting")
-	bool bDebugTargeting = false; // 디버그 시각화 여부
-
-	UPROPERTY(EditAnywhere, Category = "Targeting")
-	TEnumAsByte<ECollisionChannel> TargetCollisionChannel = ECC_Pawn; // 타겟 감지 채널
-
-	// 공격 대상 찾기 함수
-	APlayerCharacter* GetTargetPlayer();
-	TArray<APlayerCharacter*> FindTargetsInRadius(const FVector& Origin, float Radius);
-	APlayerCharacter* SelectBestTarget(const TArray<APlayerCharacter*>& PotentialTargets);
 
 protected:
 	// ===========
@@ -83,6 +61,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RatKnight Skill")
 	USoundBase* RatUltimateSound;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "RatKnight Skill")
+	UNiagaraSystem* RatPoisonNiagaraEffect;
+
 public:
 	virtual void BeginPlay() override;
 
@@ -101,4 +82,11 @@ private:
 	bool bIsInStealthMode = false;
 	FTimerHandle StealthTimerHandle;
 	float StealthDuration = 5.0f;
+
+// ===========
+//  디버그 함수
+// ===========
+public:
+	UFUNCTION(BlueprintCallable, Category = "Debug")
+	void DebugPrintTargetBuffs(APlayerCharacter* Target) const;
 };

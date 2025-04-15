@@ -6,6 +6,9 @@
 #include "GameFramework/Character.h"
 #include "CharacterComponent/BuffComponent.h"
 #include "CharacterComponent/StatComponent.h"
+#include "NiagaraSystem.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "PlayerCharacter.generated.h"
 
@@ -22,8 +25,6 @@ public:
 	APlayerCharacter();
 
 protected:
-	UFUNCTION()
-	void Test();
 
 	UFUNCTION()
 	void OnCapsuleOverlap(
@@ -52,7 +53,11 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated)
 	bool bIsDoubleJump;
+
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
+
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float MoveSpeed;
@@ -67,19 +72,7 @@ protected:
 	UAnimMontage* SkillAttackMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	UAnimMontage* GuardMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimMontage* UltimateMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	UAnimMontage* DashMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
-	UCameraComponent* Camera;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
-	USpringArmComponent* SpringArm;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment")
 	UStaticMeshComponent* WeaponComponent;
@@ -102,12 +95,13 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
 	UStatComponent* StatComponent;
 
+	FRotator LastSentRotation;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Animation")
+	TMap<FString, UAnimMontage*> MapAnim;
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
+public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -117,20 +111,30 @@ public:
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
+	UFUNCTION(Server, Unreliable)
+	void ServerSetDirection(const FRotator& Rotation);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastSetDirection(const FRotator& Rotation);
+
 	UFUNCTION()
 	void StartJump(const FInputActionValue& Value);
 
-	UFUNCTION(Server, Unreliable)
+	UFUNCTION(Server, Reliable)
 	void ServerStartJump();
 
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void MulticastStartJump();
 
 	UFUNCTION()
 	void StopJump(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void Roll(const FInputActionValue& Value);
+	void Dash(const FInputActionValue& Value);
+	UFUNCTION(Server, Reliable)
+	void ServerDash();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastDash();
 
 	UFUNCTION()
 	void Guard(const FInputActionValue& Value);
@@ -141,11 +145,25 @@ public:
 	UFUNCTION()
 	void NormalAttack(const FInputActionValue& Value);
 
-	UFUNCTION(Server, Unreliable)
+	UFUNCTION(Server, Reliable)
 	void ServerAttack();
 
-	UFUNCTION(NetMulticast, Unreliable)
+	UFUNCTION(NetMulticast, Reliable)
 	void MulticastAttack();
+
+	UFUNCTION()
+	void Dead();
+
+	UFUNCTION(Server, Reliable)
+	void ServerDead();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastDead();
+
+	UFUNCTION()
+	void BeginAttack();
+
+	UFUNCTION()
+	void EndAttack();
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	float CalculateDamage(float BaseDamage, APlayerCharacter* Attacker);
@@ -156,7 +174,43 @@ public:
 	virtual void Ultimate(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Ultimate, );
 protected:
 	bool bIsGuarding;
-
+	bool bIsHit;
+	bool bIsDead;
 private:
 	int NormalAttackMontageIndex;
+public:
+	UFUNCTION()
+	void SetHitState(bool bIsHit);
+	// ==============
+	// Targeting Logic
+	// ==============
+	UPROPERTY(EditAnywhere, Category = "Targeting")
+	float AttackRadius = 106.0f;  // 공격 감지 반경
+
+	UPROPERTY(EditAnywhere, Category = "Targeting")
+	float ForwardOffset = 30.0f; // 전방 오프셋 거리
+
+	UPROPERTY(EditAnywhere, Category = "Targeting")
+	bool bDebugTargeting = false; // 디버그 시각화 여부
+
+	UPROPERTY(EditAnywhere, Category = "Targeting")
+	TEnumAsByte<ECollisionChannel> TargetCollisionChannel = ECC_Pawn; // 타겟 감지 채널
+
+	// 공격 대상 찾기 함수
+	APlayerCharacter* GetTargetPlayer();
+	TArray<APlayerCharacter*> FindTargetsInRadius(const FVector& Origin, float Radius);
+	APlayerCharacter* SelectBestTarget(const TArray<APlayerCharacter*>& PotentialTargets);
+
+public:
+	UFUNCTION(BlueprintCallable, Category = "Component")
+	UStatComponent* GetStatComponent() const { return StatComponent; }
+
+protected:
+	// 이동속도 업데이트
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void UpdateMovementSpeed();
+
+	UFUNCTION()
+	void Test(UAnimMontage* Montage, bool bInterrupted);
+
 };

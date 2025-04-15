@@ -14,7 +14,6 @@ class JOSEON12KNIGHTS_API UStatComponent : public UActorComponent
 public:
 	UStatComponent();
 
-protected:
 	// 초기화된 스탯 정보(최대 체력, 공격력, 방어력 등)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
 	FCharacterStatInfo BaseStats;
@@ -53,6 +52,5 @@ public:
 	UPROPERTY(BlueprintAssignable, Category="Stat")
 	FOnDeath OnDeath;
 
-protected:
 	virtual void BeginPlay() override;
 };

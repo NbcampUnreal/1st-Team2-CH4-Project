@@ -16,6 +16,10 @@ public:
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	bool bIsReady = false;
 
+	UPROPERTY(Replicated, BlueprintReadWrite)
+	FString SelectedCharacterID;
+
+
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

@@ -19,7 +19,8 @@ public class Joseon12Knights : ModuleRules
             "EnhancedInput",
             "NavigationSystem",  
             "AIModule", 
-            "GamePlayTasks"
+            "GamePlayTasks",
+            "Niagara"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] { });

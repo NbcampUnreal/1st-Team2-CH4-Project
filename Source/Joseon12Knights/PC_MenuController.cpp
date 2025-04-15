@@ -68,11 +68,14 @@ void APC_MenuController::OnCharacterSelectEnterPressed()
 
 			if (bCharacterSelected && bHasAI)
 			{
+				OnCharacterSelectConfirmed(GI->SelectedCpuCount);
+
 				UIController->ShowUI(EUIScreen::MapSelect);
 			}
 		}
 	}
 }
+
 
 void APC_MenuController::OnCharacterStoryEnterPressed()
 {
@@ -113,6 +116,27 @@ void APC_MenuController::SelectVS()
 	}
 }
 
+void APC_MenuController::SelectOnline()
+{
+	if (UGI_GameCoreInstance* GI = GetGI())
+	{
+		GI->SelectedPlayMode = EPlayMode::Online;
+		GI->bIsHost = true;
+	}
+
+	if (AGS_FighterState* GS = GetGS())
+	{
+		GS->bShowModeSelectUI = false;
+	}
+
+	if (UIController)
+	{
+		UIController->ShowUI(EUIScreen::Online); 
+	}
+}
+
+
+
 void APC_MenuController::SelectArcade()
 {
 	if (UGI_GameCoreInstance* GI = GetGI())
@@ -129,6 +153,25 @@ void APC_MenuController::SelectArcade()
 	if (UIController)
 	{
 		UIController->ShowUI(EUIScreen::CharacterStory);
+	}
+}
+
+void APC_MenuController::SelectJoin()
+{
+	if (UGI_GameCoreInstance* GI = GetGI())
+	{
+		GI->SelectedPlayMode = EPlayMode::Online;
+		GI->bIsHost = false; 
+	}
+
+	if (AGS_FighterState* GS = GetGS())
+	{
+		GS->bShowModeSelectUI = false;
+	}
+
+	if (UIController)
+	{
+		UIController->ShowUI(EUIScreen::Join);
 	}
 }
 
@@ -157,8 +200,13 @@ void APC_MenuController::OnCharacterSelectConfirmed(int32 NumAI)
 				FPlayerLobbyInfo AI;
 				AI.PlayerName = FString::Printf(TEXT("AI_%d"), i + 1);
 				AI.bIsReady = true;
-				AI.SelectedCharacterID = TEXT("RandomAI");
-				GI->PlayerLobbyInfos.Add(AI);
+
+				AI.SelectedCharacterID = GI->CpuCharacterIDs.IsValidIndex(i)
+					? GI->CpuCharacterIDs[i]
+					: TEXT("1");  
+
+					GI->PlayerLobbyInfos.Add(AI);
+
 			}
 
 			if (AGM_SingleMode* GM = Cast<AGM_SingleMode>(UGameplayStatics::GetGameMode(this)))
@@ -175,6 +223,7 @@ void APC_MenuController::OnCharacterSelectConfirmed(int32 NumAI)
 		}
 	}
 }
+
 
 void APC_MenuController::HandleBackToCharacterSelect()
 {
@@ -214,3 +263,15 @@ UGI_GameCoreInstance* APC_MenuController::GetGI() const
 {
 	return GetGameInstance<UGI_GameCoreInstance>();
 }
+
+
+void APC_MenuController::Server_SetReady_Implementation()
+{
+	if (APS_FighterPlayerState* PS = GetPlayerState<APS_FighterPlayerState>())
+	{
+		PS->bIsReady = true;
+
+		UE_LOG(LogTemp, Warning, TEXT("Server_SetReady called — bIsReady set to true for %s"), *PS->GetPlayerName());
+	}
+}
+
