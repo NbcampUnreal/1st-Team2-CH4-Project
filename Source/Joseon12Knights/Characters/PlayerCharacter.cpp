@@ -148,6 +148,12 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	UpdateMovementSpeed();
+
+	if (GetWorld()->GetTimerManager().IsTimerActive(Timer))
+	{
+		RemainTime = GetWorld()->GetTimerManager().GetTimerRemaining(Timer);
+		UE_LOG(LogTemp, Warning, TEXT("%f"), RemainTime / 2);
+	}
 }
 
 void APlayerCharacter::UpdateMovementSpeed() // ë§??„ë ˆ?„ë§ˆ???¸ì¶œ?˜ì–´ ?´ë™ ?ë„ë¥??…ë°?´íŠ¸.
@@ -161,7 +167,7 @@ void APlayerCharacter::UpdateMovementSpeed() // ë§??„ë ˆ?„ë§ˆ???¸ì¶œ?˜ì–´ ?´ë™ 
 
 void APlayerCharacter::Test(UAnimMontage* Montage, bool bInterrupted)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Hit End"));
+
 }
 
 
@@ -254,6 +260,29 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 			}
 		}
 	}
+}
+
+void APlayerCharacter::TestTimer()
+{
+	if (GetWorld()->GetTimerManager().IsTimerActive(Timer))
+	{
+		return;
+	}
+	else
+	{
+		GetWorldTimerManager().SetTimer(
+			Timer,
+			FTimerDelegate::CreateLambda([this]()
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Test Timer!!"));
+				
+			}),
+			2.0f,
+			false
+		);
+	}
+
+
 }
 
 
@@ -366,7 +395,7 @@ void APlayerCharacter::Guard(const FInputActionValue& Value)
 	if (bIsHit) return;
 	bool bIsGuard = Value.Get<bool>();
 
-	UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
+	TestTimer();
 
 	// »ç¿îµå Àç»ý
 	if (!bIsGuarding && bIsGuard && GuardSound)

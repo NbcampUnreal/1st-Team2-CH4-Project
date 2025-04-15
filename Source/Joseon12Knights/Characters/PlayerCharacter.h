@@ -25,6 +25,8 @@ public:
 	APlayerCharacter();
 
 protected:
+	
+	FTimerHandle Timer;
 
 	UFUNCTION()
 	void OnCapsuleOverlap(
@@ -104,6 +106,11 @@ protected:
 public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	UFUNCTION()
+	void TestTimer();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Temp")
+	float RemainTime;
 
 	UFUNCTION()
 	void Landed(const FHitResult& Hit);
