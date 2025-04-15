@@ -24,7 +24,16 @@ class JOSEON12KNIGHTS_API APlayerCharacter : public ACharacter
 public:
 	APlayerCharacter();
 
+	UFUNCTION(BlueprintCallable)
+	void InitializeData();
+
 protected:
+	bool bIsAlive;
+	float AttackDamage;
+	float CurrentHealth;
+	float MaxHealth;
+	
+	FTimerHandle Timer;
 
 	UFUNCTION()
 	void OnCapsuleOverlap(
@@ -104,6 +113,14 @@ protected:
 public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	UFUNCTION()
+	void TestTimer();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Temp")
+	float RemainTime;
+
+	UFUNCTION(BlueprintCallable)
+	bool IsAlive() const;
 
 	UFUNCTION()
 	void Landed(const FHitResult& Hit);
