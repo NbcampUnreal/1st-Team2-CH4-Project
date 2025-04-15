@@ -11,6 +11,15 @@ void AGM_LobbyMode::BeginPlay()
 {
     Super::BeginPlay();
     GameInstance = Cast<UGI_GameCoreInstance>(GetGameInstance());
+
+    if (HasAuthority())
+    {
+        UE_LOG(LogTemp, Warning, TEXT("🏁 LobbyMode BeginPlay: HOST (HasAuthority = true)"));
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("🎮 LobbyMode BeginPlay: CLIENT (HasAuthority = false)"));
+    }
 }
 
 void AGM_LobbyMode::Tick(float DeltaSeconds)

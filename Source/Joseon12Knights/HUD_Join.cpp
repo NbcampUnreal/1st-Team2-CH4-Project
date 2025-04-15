@@ -1,26 +1,27 @@
 #include "HUD_Join.h"
 #include "Components/VerticalBox.h"
-#include "Components/TextBlock.h"
-#include "Blueprint/UserWidget.h"
+#include "WBP_ServerButton.h"
 
 void UHUD_Join::NativeConstruct()
 {
     Super::NativeConstruct();
-
-    // 기본 리스트 초기화 등
 }
 
-void UHUD_Join::PopulateRoomList(const TArray<FString>& RoomNames)
+void UHUD_Join::PopulateRoomList(const TArray<FOnlineSessionSearchResult>& Results)
 {
-    if (!RoomListBox || !RoomTileClass) return;
+    if (!RoomListBox || !ServerButtonClass) return;
 
     RoomListBox->ClearChildren();
 
-    for (const FString& RoomName : RoomNames)
+    for (const auto& Result : Results)
     {
-        UUserWidget* RoomTile = CreateWidget<UUserWidget>(this, RoomTileClass);
-        if (!RoomTile) continue;
+        if (!Result.IsValid()) continue;
 
-        RoomListBox->AddChild(RoomTile);
+        UWBP_ServerButton* Button = CreateWidget<UWBP_ServerButton>(this, ServerButtonClass);
+        if (!Button) continue;
+
+        Button->Setup(Result); 
+        RoomListBox->AddChild(Button);
     }
 }
+

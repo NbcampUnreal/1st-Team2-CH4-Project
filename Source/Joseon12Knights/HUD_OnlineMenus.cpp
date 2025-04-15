@@ -1,62 +1,89 @@
 #include "HUD_OnlineMenus.h"
 #include "Components/Button.h"
-#include "PC_MenuController.h"
-#include "PC_LobbyController.h"
+#include "Components/EditableTextBox.h"
+#include "Components/VerticalBox.h"
+#include "GI_GameCoreInstance.h"
+#include "Kismet/GameplayStatics.h"
 
 void UHUD_OnlineMenus::NativeConstruct()
 {
-    Super::NativeConstruct();
+	Super::NativeConstruct();
 
-    if (Back)
-    {
-        Back->OnClicked.AddDynamic(this, &UHUD_OnlineMenus::OnBackClicked);
-    }
+	if (Back)
+	{
+		Back->OnClicked.AddDynamic(this, &UHUD_OnlineMenus::OnBackClicked);
+	}
 
-    if (HostButton)
-    {
-        HostButton->OnClicked.AddDynamic(this, &UHUD_OnlineMenus::OnHostClicked);
-    }
+	if (HostButton)
+	{
+		HostButton->OnClicked.AddDynamic(this, &UHUD_OnlineMenus::OnHostClicked);
+	}
 
+	if (JoinButton)
+	{
+		JoinButton->OnClicked.AddDynamic(this, &UHUD_OnlineMenus::OnClickJoin);
+	}
+
+	if (CreateSessionButton)
+	{
+		CreateSessionButton->OnClicked.AddDynamic(this, &UHUD_OnlineMenus::OnCreateSessionConfirmed);
+	}
+
+	if (SessionName && SessionNamePanel)
+	{
+		SessionNamePanel->SetVisibility(ESlateVisibility::Collapsed);
+	}
 }
 
 void UHUD_OnlineMenus::OnHostClicked()
 {
-    if (LobbyMap.IsValid() || LobbyMap.ToSoftObjectPath().IsValid())
-    {
-        // 강제 로딩
-        LobbyMap.LoadSynchronous();
+	UE_LOG(LogTemp, Warning, TEXT("▶ Host 버튼 클릭됨"));
 
-        FString MapName = LobbyMap.GetAssetName();
-
-        if (APlayerController* PC = GetOwningPlayer())
-        {
-            FString Command = FString::Printf(TEXT("open %s?listen"), *MapName);
-            UE_LOG(LogTemp, Warning, TEXT("Final Command: %s"), *Command);
-            PC->ConsoleCommand(Command);
-        }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("LobbyMap 설정이 유효하지 않음 또는 경로 불완전"));
-    }
-
+	if (SessionNamePanel)
+	{
+		SessionNamePanel->SetVisibility(ESlateVisibility::Visible);
+		UE_LOG(LogTemp, Warning, TEXT("✅ SessionNamePanel SetVisibility → Visible"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ SessionNamePanel is nullptr"));
+	}
 }
 
+void UHUD_OnlineMenus::OnCreateSessionConfirmed()
+{
+	if (!SessionName || SessionName->GetText().IsEmpty()) return;
 
+	FString EnteredName = SessionName->GetText().ToString();
 
+	if (UGI_GameCoreInstance* GI = GetGameInstance<UGI_GameCoreInstance>())
+	{
+		GI->bIsHost = true;
+		UE_LOG(LogTemp, Warning, TEXT("🟢 Host 설정됨: bIsHost = true"));
+		GI->SelectedPlayMode = EPlayMode::Online;
+		GI->CustomSessionName = FName(*EnteredName);
+		GI->CreateSessionWithName(GI->CustomSessionName);
+	}
+}
 
+void UHUD_OnlineMenus::OnClickJoin()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Join 버튼 클릭됨"));
+}
 
 void UHUD_OnlineMenus::OnBackClicked()
 {
-    RemoveFromParent();
+	UE_LOG(LogTemp, Warning, TEXT("뒤로가기 버튼 클릭됨"));
 
-    if (APlayerController* PC = GetOwningPlayer())
-    {
-        if (APC_MenuController* MenuPC = Cast<APC_MenuController>(PC))
-        {
-            MenuPC->HandleBackToMainMenu();  // 메인 메뉴로 이동
-        }
-    }
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		if (APC_MenuController* MenuPC = Cast<APC_MenuController>(PC))
+		{
+			MenuPC->HandleBackToMainMenu();  // 🔁 메인 메뉴로 복귀
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("❌ MenuController 캐스팅 실패"));
+		}
+	}
 }
-
-
