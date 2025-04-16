@@ -18,6 +18,16 @@ void UHUD_MapTile::NativeConstruct()
     {
         Border_Selection->SetVisibility(ESlateVisibility::Hidden);
     }
+
+    if (MapIcon && TileImage)
+    {
+        MapIcon->SetBrushFromTexture(TileImage);
+    }
+
+    if (MapText)
+    {
+        MapText->SetText(MapLabel);
+    }
 }
 
 

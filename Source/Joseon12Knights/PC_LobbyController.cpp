@@ -61,33 +61,10 @@ void APC_LobbyController::Server_AttemptStartMatch_Implementation()
 {
     if (AGM_LobbyMode* GM = Cast<AGM_LobbyMode>(UGameplayStatics::GetGameMode(this)))
     {
-        AGS_FighterState* GS = Cast<AGS_FighterState>(UGameplayStatics::GetGameState(this));
-        if (!GS)
-        {
-            return;
-        }
-
-        bool bAllReady = true;
-        for (APlayerState* PS : GS->PlayerArray)
-        {
-            if (APS_FighterPlayerState* FighterPS = Cast<APS_FighterPlayerState>(PS))
-            {
-                if (!FighterPS->bIsReady)
-                {
-                    bAllReady = false;
-                    break;
-                }
-            }
-        }
-
-        if (bAllReady)
-        {
-            // 바로 인게임 맵으로 전환
-            UGameplayStatics::OpenLevel(this, FName("Concluding_Ground_Online1")); // 실제 맵 이름으로 교체 필요
-        }
-
+        GM->TryStartMatch();  
     }
 }
+
 
 void APC_LobbyController::SetLobbyCameraView()
 {
