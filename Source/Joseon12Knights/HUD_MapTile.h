@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/TextBlock.h"
 #include "Components/Image.h" 
 #include "HUD_MapTile.generated.h"
 
@@ -37,6 +38,20 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
     USoundBase* SelectSound;
 
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* MapText;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map")
+    FText MapLabel;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 TileID = 0;
+
+    UPROPERTY(meta = (BindWidget))
+    UImage* MapIcon;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map")
+    UTexture2D* TileImage;
+
+
 };

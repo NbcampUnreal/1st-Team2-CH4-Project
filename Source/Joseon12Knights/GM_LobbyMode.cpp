@@ -12,14 +12,6 @@ void AGM_LobbyMode::BeginPlay()
     Super::BeginPlay();
     GameInstance = Cast<UGI_GameCoreInstance>(GetGameInstance());
 
-    if (HasAuthority())
-    {
-        UE_LOG(LogTemp, Warning, TEXT("🏁 LobbyMode BeginPlay: HOST (HasAuthority = true)"));
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("🎮 LobbyMode BeginPlay: CLIENT (HasAuthority = false)"));
-    }
 }
 
 void AGM_LobbyMode::Tick(float DeltaSeconds)
@@ -75,10 +67,10 @@ void AGM_LobbyMode::PostLogin(APlayerController* NewPlayer)
     Super::PostLogin(NewPlayer);
 
     // 플레이어 번호 계산
-    int32 PlayerIndex = GetNumPlayers() - 1; // 단순하게 새로 들어온 순서
+    int32 PlayerIndex = GetNumPlayers() - 1; 
     PlayerNumberMap.Add(NewPlayer, PlayerIndex);
 
-    FString CharacterKey = FString::FromInt(PlayerIndex + 1); // "1", "2", ...
+    FString CharacterKey = FString::FromInt(PlayerIndex + 1);
 
     if (!CharacterBPMap.Contains(CharacterKey))
     {
@@ -122,21 +114,16 @@ void AGM_LobbyMode::PostLogin(APlayerController* NewPlayer)
         LobbyChar->SetIsLocal(NewPlayer->IsLocalController());
         SpawnedLobbyCharacters.Add(LobbyChar);
 
-        UE_LOG(LogTemp, Warning, TEXT("✅ Lobby character spawned for PlayerIndex %d"), PlayerIndex);
     }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("❌ Failed to spawn LobbyCharacter for PlayerIndex %d"), PlayerIndex);
-    }
+
 
     if (UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance()))
     {
         GI->PlayerCharacterMap.Add(PlayerIndex, CharacterKey);
-        UE_LOG(LogTemp, Warning, TEXT("✅ PlayerIndex %d → CharacterKey '%s' 저장 완료"), PlayerIndex, *CharacterKey);
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("❌ GameInstance 캐스팅 실패"));
+        UE_LOG(LogTemp, Error, TEXT("GameInstance 캐스팅 실패"));
     }
 }
 
@@ -144,7 +131,6 @@ void AGM_LobbyMode::PostLogin(APlayerController* NewPlayer)
 
 void AGM_LobbyMode::TryStartMatch()
 {
-    UE_LOG(LogTemp, Warning, TEXT("🚀 TryStartMatch: 맵 전환 시작"));
 
     FString TravelURL = TEXT("/Game/PlatformFighterKit/Maps/Levels/Concluding_Ground_Online1?listen");
 
@@ -154,7 +140,7 @@ void AGM_LobbyMode::TryStartMatch()
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("❌ TryStartMatch: 클라이언트에서 호출됨"));
+        UE_LOG(LogTemp, Error, TEXT("TryStartMatch: 클라이언트에서 호출됨"));
     }
 }
 
@@ -168,7 +154,6 @@ void AGM_LobbyMode::Server_SetReady_Implementation(APlayerController* PC)
         if (APS_FighterPlayerState* FighterPS = Cast<APS_FighterPlayerState>(PC->PlayerState))
         {
             FighterPS->bIsReady = true;
-            UE_LOG(LogTemp, Log, TEXT("✅ %s is now ready"), *FighterPS->GetPlayerName());
         }
     }
 }

@@ -9,12 +9,10 @@
 void AGM_MatchMode::BeginPlay()
 {
 	Super::BeginPlay();
-	UE_LOG(LogTemp, Warning, TEXT("🏁 GM_MatchMode BeginPlay"));
 
 	UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance());
 	if (!GI)
 	{
-		UE_LOG(LogTemp, Error, TEXT("❌ GameInstance 캐스팅 실패"));
 		return;
 	}
 
@@ -23,18 +21,15 @@ void AGM_MatchMode::BeginPlay()
 		int32 PlayerIndex = Elem.Key;
 		FString CharacterKey = Elem.Value;
 
-		UE_LOG(LogTemp, Warning, TEXT("🎮 PlayerIndex: %d → CharacterKey: %s"), PlayerIndex, *CharacterKey);
 
 		if (!CharacterBPMap.Contains(CharacterKey))
 		{
-			UE_LOG(LogTemp, Error, TEXT("❌ CharacterBPMap에 Key '%s' 없음"), *CharacterKey);
 			continue;
 		}
 
 		TSubclassOf<APawn> CharacterClass = CharacterBPMap[CharacterKey];
 		if (!CharacterClass)
 		{
-			UE_LOG(LogTemp, Error, TEXT("❌ CharacterClass is nullptr for Key '%s'"), *CharacterKey);
 			continue;
 		}
 
@@ -54,7 +49,7 @@ void AGM_MatchMode::BeginPlay()
 
 		if (!SpawnPoint)
 		{
-			UE_LOG(LogTemp, Error, TEXT("❌ SpawnPoint '%s' 없음"), *SpawnName);
+			UE_LOG(LogTemp, Error, TEXT("SpawnPoint '%s' 없음"), *SpawnName);
 			continue;
 		}
 
@@ -66,13 +61,10 @@ void AGM_MatchMode::BeginPlay()
 		APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(CharacterClass, SpawnLoc, SpawnRot, Params);
 		if (SpawnedPawn)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("✅ Player %d: '%s' 스폰 완료 at %s"), PlayerIndex, *CharacterClass->GetName(), *SpawnName);
+			UE_LOG(LogTemp, Warning, TEXT("Player %d: '%s' 스폰 완료 at %s"), PlayerIndex, *CharacterClass->GetName(), *SpawnName);
 			SpawnedCharacters.Add(PlayerIndex, SpawnedPawn);
 		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("❌ Player %d: Spawn 실패 → %s"), PlayerIndex, *CharacterClass->GetName());
-		}
+
 	}
 
 	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
@@ -84,16 +76,8 @@ void AGM_MatchMode::BeginPlay()
 			if (MyPawn)
 			{
 				PC->Possess(MyPawn);
-				UE_LOG(LogTemp, Warning, TEXT("🎮 BeginPlay에서 호스트 Possess 성공 → %s"), *MyPawn->GetName());
 			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("❌ BeginPlay: 호스트용 Pawn nullptr"));
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("❌ BeginPlay: SpawnedCharacters에 호스트용 PlayerIndex 0 없음"));
+
 		}
 	}
 
@@ -102,7 +86,6 @@ void AGM_MatchMode::BeginPlay()
 void AGM_MatchMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-	UE_LOG(LogTemp, Warning, TEXT("📥 PostLogin: %s"), *NewPlayer->GetName());
 
 	int32 PlayerIndex = GetNumPlayers() - 1;
 
@@ -112,11 +95,7 @@ void AGM_MatchMode::PostLogin(APlayerController* NewPlayer)
 		if (MyPawn)
 		{
 			NewPlayer->Possess(MyPawn);
-			UE_LOG(LogTemp, Warning, TEXT("🎮 PostLogin: PlayerIndex %d Possess 성공 → %s"), PlayerIndex, *MyPawn->GetName());
 		}
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("❌ PostLogin: PlayerIndex %d용 Pawn 없음"), PlayerIndex);
-	}
+
 }
