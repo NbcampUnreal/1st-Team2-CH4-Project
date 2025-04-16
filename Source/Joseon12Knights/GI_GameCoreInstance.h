@@ -70,5 +70,10 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	TArray<bool> ReadyArray;
 
+	UPROPERTY()
+	TMap<int32, FString> PlayerCharacterMap; // PlayerIndex → CharacterID
+
+	UPROPERTY(EditAnywhere)
+	TMap<FString, TSubclassOf<APawn>> CharacterBPMap;
 
 };

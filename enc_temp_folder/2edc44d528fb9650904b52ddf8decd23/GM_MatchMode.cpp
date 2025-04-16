@@ -74,29 +74,6 @@ void AGM_MatchMode::BeginPlay()
 			UE_LOG(LogTemp, Error, TEXT("❌ Player %d: Spawn 실패 → %s"), PlayerIndex, *CharacterClass->GetName());
 		}
 	}
-
-	if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
-	{
-		int32 PlayerIndex = 0;
-		if (SpawnedCharacters.Contains(PlayerIndex))
-		{
-			APawn* MyPawn = SpawnedCharacters[PlayerIndex];
-			if (MyPawn)
-			{
-				PC->Possess(MyPawn);
-				UE_LOG(LogTemp, Warning, TEXT("🎮 BeginPlay에서 호스트 Possess 성공 → %s"), *MyPawn->GetName());
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("❌ BeginPlay: 호스트용 Pawn nullptr"));
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("❌ BeginPlay: SpawnedCharacters에 호스트용 PlayerIndex 0 없음"));
-		}
-	}
-
 }
 
 void AGM_MatchMode::PostLogin(APlayerController* NewPlayer)
