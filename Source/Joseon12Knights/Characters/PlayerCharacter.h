@@ -66,8 +66,6 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 
-
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float MoveSpeed;
 

@@ -117,7 +117,7 @@ void APlayerCharacter::OnWeaponOverlap(UPrimitiveComponent* OverlappedComp, AAct
 
 	if (APlayerCharacter* EnemyCharacter = Cast<APlayerCharacter>(OtherActor))
 	{
-		EndAttack();
+		
 		UGameplayStatics::ApplyDamage(EnemyCharacter, 50.f, GetController(), this, UDamageType::StaticClass());
 	}
 }
