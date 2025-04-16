@@ -1,6 +1,4 @@
-﻿// 
-
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
@@ -16,7 +14,6 @@ class JOSEON12KNIGHTS_API UStatComponent : public UActorComponent
 public:
 	UStatComponent();
 
-protected:
 	// 초기화된 스탯 정보(최대 체력, 공격력, 방어력 등)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stat")
 	FCharacterStatInfo BaseStats;
@@ -49,11 +46,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Stat")
 	void ChangeHP(float Delta);
 
-	// 사망 처리 등 이벤트가 필요하면 Delegate 사용 가능
+	// 사망 처리 Delegate
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeath);
+
 	UPROPERTY(BlueprintAssignable, Category="Stat")
 	FOnDeath OnDeath;
 
-protected:
 	virtual void BeginPlay() override;
 };
