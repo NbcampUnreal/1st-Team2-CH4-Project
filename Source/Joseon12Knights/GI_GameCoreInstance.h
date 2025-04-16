@@ -2,9 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
-#include "OnlineSessionSettings.h"
 #include "Interfaces/OnlineSessionInterface.h"
-#include "OnlineSubsystem.h"
 #include "GI_GameCoreInstance.generated.h"
 
 UENUM(BlueprintType)
@@ -37,8 +35,7 @@ class JOSEON12KNIGHTS_API UGI_GameCoreInstance : public UGameInstance
 	GENERATED_BODY()
 
 private:
-	IOnlineSessionPtr SessionInterface;
-	virtual void Init() override;
+	//virtual void Init() override;
 
 public:
 	UGI_GameCoreInstance();
@@ -73,12 +70,5 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	TArray<bool> ReadyArray;
 
-	UPROPERTY(BlueprintReadWrite)
-	FName CustomSessionName;
 
-	void CreateSession();
-	void JoinSession(const FOnlineSessionSearchResult& SessionResult);
-	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
-	void CreateSessionWithName(FName InName);
-	void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
 };

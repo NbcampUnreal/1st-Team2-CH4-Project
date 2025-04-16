@@ -14,36 +14,10 @@ protected:
     virtual void NativeConstruct() override;
 
 
-    UFUNCTION()
-    void OnBackClicked();
-
-    UFUNCTION()
-    void OnClickJoin();
-
-    UFUNCTION()
-    void OnHostClicked();
-
-    UFUNCTION()
-    void OnCreateSessionConfirmed();
-
-    UPROPERTY(meta = (BindWidget))
-    class UButton* HostButton;
-
-    UPROPERTY(meta = (BindWidget))
-    class UButton* JoinButton;
+    /*UFUNCTION()
+    void OnBackClicked();*/
 
     UPROPERTY(meta = (BindWidget))
     class UButton* Back;
 
-    UPROPERTY(meta = (BindWidget))
-    class UButton* CreateSessionButton;
-
-    UPROPERTY(meta = (BindWidget))
-    class UEditableTextBox* SessionName;
-
-    UPROPERTY(meta = (BindWidget))
-    class UVerticalBox* SessionNamePanel;
-
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Maps")
-    TSoftObjectPtr<UWorld> LobbyMap;
 };

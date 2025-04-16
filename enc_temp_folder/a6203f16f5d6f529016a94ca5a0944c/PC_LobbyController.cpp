@@ -83,7 +83,7 @@ void APC_LobbyController::Server_AttemptStartMatch_Implementation()
         if (bAllReady)
         {
             // 바로 인게임 맵으로 전환
-            UGameplayStatics::OpenLevel(this, FName("Concluding_Ground_Online1")); // 실제 맵 이름으로 교체 필요
+            UGameplayStatics::OpenLevel(this, FName("Level_Online")); // 실제 맵 이름으로 교체 필요
         }
 
     }
