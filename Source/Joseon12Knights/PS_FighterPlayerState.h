@@ -1,4 +1,3 @@
-// PS_FighterPlayerState.h
 #pragma once
 
 #include "CoreMinimal.h"

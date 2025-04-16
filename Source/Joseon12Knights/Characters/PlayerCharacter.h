@@ -22,14 +22,49 @@ class JOSEON12KNIGHTS_API APlayerCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	APlayerCharacter();
 
+	UFUNCTION(BlueprintCallable)
+	void InitializeData();
+
 protected:
-	// Called when the game starts or when spawned
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Stat")
+	bool bIsAlive;
+	float AttackDamage;
+	float CurrentHealth;
+	float MaxHealth;
+	
+	FTimerHandle Timer;
+
+	UFUNCTION()
+	void OnCapsuleOverlap(
+		UPrimitiveComponent* OverlappedComp,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnWeaponOverlap(
+		UPrimitiveComponent* OverlappedComp,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
+
+	virtual float TakeDamage(
+		float DamageAmount,
+		struct FDamageEvent const& DamageEvent,
+		class AController* EventInstigator,
+		AActor* DamageCauser
+	) override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Replicated)
 	bool bIsDoubleJump;
+
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float MoveSpeed;
@@ -44,19 +79,7 @@ protected:
 	UAnimMontage* SkillAttackMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	UAnimMontage* GuardMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimMontage* UltimateMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	UAnimMontage* DashMontage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
-	UCameraComponent* Camera;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera")
-	USpringArmComponent* SpringArm;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment")
 	UStaticMeshComponent* WeaponComponent;
@@ -79,13 +102,23 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
 	UStatComponent* StatComponent;
 
+	FRotator LastSentRotation;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Animation")
+	TMap<FString, UAnimMontage*> MapAnim;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	UFUNCTION()
+	void TestTimer();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Temp")
+	float RemainTime;
+
+	UFUNCTION(BlueprintCallable)
+	bool IsAlive() const;
 
 	UFUNCTION()
 	void Landed(const FHitResult& Hit);
@@ -93,14 +126,30 @@ public:
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
+	UFUNCTION(Server, Unreliable)
+	void ServerSetDirection(const FRotator& Rotation);
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void MulticastSetDirection(const FRotator& Rotation);
+
 	UFUNCTION()
 	void StartJump(const FInputActionValue& Value);
+
+	UFUNCTION(Server, Reliable)
+	void ServerStartJump();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastStartJump();
 
 	UFUNCTION()
 	void StopJump(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void Roll(const FInputActionValue& Value);
+	void Dash(const FInputActionValue& Value);
+	UFUNCTION(Server, Reliable)
+	void ServerDash();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastDash();
 
 	UFUNCTION()
 	void Guard(const FInputActionValue& Value);
@@ -109,44 +158,47 @@ public:
 	void ReleaseGuard(const FInputActionValue& Value);
 
 	UFUNCTION()
-	void NormalAttack(const FInputActionValue& Value)
-	{
-		int Size = NormalAttackMontages.Num();
-		int PrevIndex = NormalAttackMontageIndex;
-		NormalAttackMontageIndex++;
-		UAnimMontage* NormalAttackMontage = NormalAttackMontages[NormalAttackMontageIndex % Size];
+	void NormalAttack(const FInputActionValue& Value);
 
-		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	UFUNCTION(Server, Reliable)
+	void ServerAttack();
 
-		if (AnimInstance && NormalAttackMontage && !AnimInstance->Montage_IsPlaying(NormalAttackMontages[PrevIndex % Size]))
-		{
-			AnimInstance->StopAllMontages(1);
-			AnimInstance->Montage_Play(NormalAttackMontage);
-		}
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastAttack();
 
-		// 사운드 재생
-		if (NormalAttackSound)
-		{
-			UGameplayStatics::PlaySoundAtLocation(this, NormalAttackSound, GetActorLocation());
-		}
-	}
+	UFUNCTION()
+	void Dead();
+
+	UFUNCTION(Server, Reliable)
+	void ServerDead();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastDead();
+
+	UFUNCTION()
+	void BeginAttack();
+
+	UFUNCTION()
+	void EndAttack();
 
 	UFUNCTION(BlueprintCallable, Category = "Combat")
 	float CalculateDamage(float BaseDamage, APlayerCharacter* Attacker);
+
 	UFUNCTION()
 	virtual void Skill(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Skill, );
 	UFUNCTION()
 	virtual void Ultimate(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Ultimate, );
 protected:
 	bool bIsGuarding;
-
+	bool bIsHit;
+	bool bIsDead;
 private:
 	int NormalAttackMontageIndex;
-
-// ==============
-// Targeting Logic
-// ==============
 public:
+	UFUNCTION()
+	void SetHitState(bool bIsHit);
+	// ==============
+	// Targeting Logic
+	// ==============
 	UPROPERTY(EditAnywhere, Category = "Targeting")
 	float AttackRadius = 106.0f;  // 공격 감지 반경
 
@@ -167,4 +219,13 @@ public:
 public:
 	UFUNCTION(BlueprintCallable, Category = "Component")
 	UStatComponent* GetStatComponent() const { return StatComponent; }
+
+protected:
+	// 이동속도 업데이트
+	UFUNCTION(BlueprintCallable, Category = "Movement")
+	void UpdateMovementSpeed();
+
+	UFUNCTION()
+	void Test(UAnimMontage* Montage, bool bInterrupted);
+
 };

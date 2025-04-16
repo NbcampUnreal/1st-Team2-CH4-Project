@@ -12,7 +12,7 @@ void UHUD_CharacterSelectPanel::SetCharacter(const FString& CharacterID, const F
 
     if (!CharacterImage)
     {
-        UE_LOG(LogTemp, Error, TEXT(" CharacterImage is nullptr"));
+        UE_LOG(LogTemp, Error, TEXT("CharacterImage is null"));
         return;
     }
 
@@ -20,18 +20,20 @@ void UHUD_CharacterSelectPanel::SetCharacter(const FString& CharacterID, const F
     {
         UTexture2D* FoundTexture = CharacterIconMap[CharacterID];
 
-        if (CharacterImage && FoundTexture)
+        if (FoundTexture)
         {
             FSlateBrush Brush;
             Brush.SetResourceObject(FoundTexture);
-            Brush.ImageSize = FVector2D(256.f, 256.f); 
+            Brush.ImageSize = FVector2D(256.f, 256.f);
             CharacterImage->SetBrush(Brush);
-            UE_LOG(LogTemp, Warning, TEXT("Force-set image size for ID: %s"), *CharacterID);
+        }
+        else
+        {
+            UE_LOG(LogTemp, Error, TEXT("FoundTexture is null for CharacterID: %s"), *CharacterID);
         }
     }
-
     else
     {
-        UE_LOG(LogTemp, Error, TEXT(" No texture found in map for CharacterID: %s"), *CharacterID);
+        UE_LOG(LogTemp, Error, TEXT("CharacterIconMap missing CharacterID: %s"), *CharacterID);
     }
 }

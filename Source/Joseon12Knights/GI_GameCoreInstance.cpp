@@ -1,5 +1,5 @@
-// GI_GameCoreInstance.cpp
 #include "GI_GameCoreInstance.h"
+#include "Kismet/GameplayStatics.h"
 
 UGI_GameCoreInstance::UGI_GameCoreInstance()
 {
@@ -9,3 +9,6 @@ UGI_GameCoreInstance::UGI_GameCoreInstance()
 	LocalPlayerName = TEXT("Player");
 	bIsHost = false;
 }
+
+
+

@@ -14,3 +14,4 @@ void APS_FighterPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty
 
 	DOREPLIFETIME(APS_FighterPlayerState, bIsReady);
 }
+

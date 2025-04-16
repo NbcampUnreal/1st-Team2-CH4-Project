@@ -1,5 +1,4 @@
-﻿
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "PlayerCharacter.h"
@@ -83,4 +82,11 @@ private:
 	bool bIsInStealthMode = false;
 	FTimerHandle StealthTimerHandle;
 	float StealthDuration = 5.0f;
+
+// ===========
+//  디버그 함수
+// ===========
+public:
+	UFUNCTION(BlueprintCallable, Category = "Debug")
+	void DebugPrintTargetBuffs(APlayerCharacter* Target) const;
 };

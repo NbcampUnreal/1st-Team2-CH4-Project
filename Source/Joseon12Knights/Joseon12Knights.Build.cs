@@ -16,7 +16,12 @@ public class Joseon12Knights : ModuleRules
             "UMG",
             "Slate",
             "SlateCore",
+            "OnlineSubsystem",                  
+            "OnlineSubsystemUtils",
             "EnhancedInput",
+            "NavigationSystem",  
+            "AIModule", 
+            "GamePlayTasks",
             "Niagara"
         });
 

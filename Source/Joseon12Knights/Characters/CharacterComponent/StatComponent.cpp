@@ -27,7 +27,7 @@ void UStatComponent::ChangeHP(float Delta)
 
     if (GEngine)
     {
-        FString DebugMsg = FString::Printf(TEXT("HP Changed: Old = %.2f, Delta = %.2f, New = %.2f"), OldHP, Delta, CurrentHP);
+        FString DebugMsg = FString::Printf(TEXT("HP Changed: OldHP = %.2f, CurrentHP = %.2f"), OldHP, CurrentHP);
         GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red, DebugMsg);
     }
 
