@@ -27,14 +27,8 @@ protected:
     UPROPERTY()
     class UGI_GameCoreInstance* GameInstance;
 
-    UPROPERTY(EditAnywhere, Category = "Lobby")
-    TMap<FString, TSubclassOf<AActor>> CharacterBPMap;
-
     UPROPERTY()
     TMap<AController*, int32> PlayerNumberMap; // Controller → PlayerIndex
-
-    UPROPERTY()
-    TArray<AActor*> SpawnedLobbyCharacters;
 
     bool bStartClosed = false;
 };

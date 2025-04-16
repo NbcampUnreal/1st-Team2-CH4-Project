@@ -1,8 +1,8 @@
-// GI_GameCoreInstance.h
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Engine/GameInstance.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "GI_GameCoreInstance.generated.h"
 
 UENUM(BlueprintType)
@@ -34,6 +34,9 @@ class JOSEON12KNIGHTS_API UGI_GameCoreInstance : public UGameInstance
 {
 	GENERATED_BODY()
 
+private:
+	//virtual void Init() override;
+
 public:
 	UGI_GameCoreInstance();
 
@@ -52,7 +55,6 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<FString> CpuCharacterIDs;
 
-
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FString SelectedMapName;
 
@@ -67,5 +69,6 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 	TArray<bool> ReadyArray;
+
 
 };
