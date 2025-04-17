@@ -109,6 +109,9 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 
 void APlayerCharacter::Respawn()
 {
+	bIsDead = false;
+
+	CurrentHealth = MaxHealth;
 	InitializeData();
 }
 

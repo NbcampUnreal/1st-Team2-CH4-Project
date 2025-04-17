@@ -75,11 +75,18 @@ void UHUD_CharacterInformation::UpdateHUD()
 		float MaxHP = PS->GetMaxHealth();
 		float CurrHP = PS->GetCurrentHealth();
 
-		float VisualPercent = FMath::Clamp((CurrHP / MaxHP) * 0.5f, 0.f, 1.f);
+		float TruePercent = CurrHP / MaxHP;
+
+		float VisualPercent = (TruePercent >= 1.0f)
+			? 1.0f
+			: FMath::Clamp(TruePercent * 0.5f, 0.f, 1.f);
 
 		SuperBar->SetPercent(VisualPercent);
 
+
+		
 	}
+
 
 
 

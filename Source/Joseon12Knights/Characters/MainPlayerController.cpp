@@ -46,42 +46,29 @@ void AMainPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
-	UE_LOG(LogTemp, Warning, TEXT("▶ SetupInputComponent 진입")); // ✅ 추가!
-
 	if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(InputComponent))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("▶ EnhancedInputComponent 캐스팅 성공")); // ✅ 추가!
 
 		if (ResetPressedAction)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("▶ ResetPressedAction 존재함, 바인딩 시도")); // ✅ 추가!
+			UE_LOG(LogTemp, Warning, TEXT("ResetPressedAction 존재함, 바인딩 시도")); // ✅ 추가!
 			EnhancedInput->BindAction(ResetPressedAction, ETriggerEvent::Triggered, this, &AMainPlayerController::HandleVictoryEnterKey);
 		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("❌ ResetPressedAction 비어있음!")); // ❌ 확인
-		}
+
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("❌ EnhancedInputComponent 캐스팅 실패")); // ❌ 확인
-	}
+
 }
 
 
 void AMainPlayerController::HandleVictoryEnterKey()
 {
-	UE_LOG(LogTemp, Warning, TEXT("▶ [Victory] Enter / Reset_Pressed 입력 감지됨"));
 
 	if (VictoryScreenWidget && VictoryScreenWidget->IsInViewport())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("▶ [Victory] VictoryScreenWidget 확인됨 → 레벨 이동"));
 		UGameplayStatics::OpenLevel(this, FName("Menus"));
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("❌ [Victory] VictoryScreenWidget 없음 또는 비활성 상태"));
-	}
+
 }
 
 
