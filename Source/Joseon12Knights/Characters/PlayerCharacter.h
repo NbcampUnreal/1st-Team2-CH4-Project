@@ -102,7 +102,7 @@ protected:
 	float MoveSpeed;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
-	float DashDistance; // 1000.f ´ç 1À¯´Ö
+	float DashDistance; // 1000.f ï¿½ï¿½ 1ï¿½ï¿½ï¿½ï¿½
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	TArray<UAnimMontage*> NormalAttackMontages;
@@ -254,18 +254,18 @@ public:
 	// Targeting Logic
 	// ==============
 	UPROPERTY(EditAnywhere, Category = "Targeting")
-	float AttackRadius = 106.0f;  // °ø°Ý °¨Áö ¹Ý°æ
+	float AttackRadius = 106.0f;  // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ý°ï¿½
 
 	UPROPERTY(EditAnywhere, Category = "Targeting")
-	float ForwardOffset = 30.0f; // Àü¹æ ¿ÀÇÁ¼Â °Å¸®
+	float ForwardOffset = 30.0f; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Å¸ï¿½
 
 	UPROPERTY(EditAnywhere, Category = "Targeting")
-	bool bDebugTargeting = false; // µð¹ö±× ½Ã°¢È­ ¿©ºÎ
+	bool bDebugTargeting = false; // ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½È­ ï¿½ï¿½ï¿½ï¿½
 
 	UPROPERTY(EditAnywhere, Category = "Targeting")
-	TEnumAsByte<ECollisionChannel> TargetCollisionChannel = ECC_Pawn; // Å¸°Ù °¨Áö Ã¤³Î
+	TEnumAsByte<ECollisionChannel> TargetCollisionChannel = ECC_Pawn; // Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ Ã¤ï¿½ï¿½
 
-	// °ø°Ý ´ë»ó Ã£±â ÇÔ¼ö
+	// ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ Ã£ï¿½ï¿½ ï¿½Ô¼ï¿½
 	APlayerCharacter* GetTargetPlayer();
 	TArray<APlayerCharacter*> FindTargetsInRadius(const FVector& Origin, float Radius);
 	APlayerCharacter* SelectBestTarget(const TArray<APlayerCharacter*>& PotentialTargets);
@@ -275,7 +275,7 @@ public:
 	UStatComponent* GetStatComponent() const { return StatComponent; }
 
 protected:
-	// ÀÌµ¿¼Óµµ ¾÷µ¥ÀÌÆ®
+	// ï¿½Ìµï¿½ï¿½Óµï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
 	UFUNCTION(BlueprintCallable, Category = "Movement")
 	void UpdateMovementSpeed();
 

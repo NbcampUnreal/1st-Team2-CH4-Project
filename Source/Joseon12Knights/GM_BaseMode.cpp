@@ -43,3 +43,12 @@ AGS_FighterState* AGM_BaseMode::GetGS() const
 	return GetGameState<AGS_FighterState>();
 }
 
+void AGM_BaseMode::HandlePlayerRespawn(AActor* PlayerActor)
+{
+	
+}
+
+bool AGM_BaseMode::CanRespawn(AActor* PlayerActor) const
+{
+	return false;
+}

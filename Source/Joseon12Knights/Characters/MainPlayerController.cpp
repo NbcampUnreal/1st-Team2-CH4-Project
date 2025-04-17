@@ -1,4 +1,5 @@
 #include "MainPlayerController.h"
+#include "Blueprint/UserWidget.h"
 #include "EnhancedInputSubsystems.h"
 
 AMainPlayerController::AMainPlayerController()
@@ -26,6 +27,15 @@ void AMainPlayerController::BeginPlay()
 			{
 				SubSystem->AddMappingContext(InputMappingContext, 0);
 			}
+		}
+	}
+
+	if (IsLocalController() && CharacterInfoWidgetClass)
+	{
+		CharacterInfoWidget = CreateWidget<UUserWidget>(this, CharacterInfoWidgetClass);
+		if (CharacterInfoWidget)
+		{
+			CharacterInfoWidget->AddToViewport();
 		}
 	}
 }

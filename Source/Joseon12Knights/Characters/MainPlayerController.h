@@ -43,6 +43,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input")
 	UInputAction* RollAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "HUD")
+	TSubclassOf<UUserWidget> CharacterInfoWidgetClass;
+
+	UUserWidget* CharacterInfoWidget;
+
+
 protected:
 	virtual void BeginPlay() override;
 };
