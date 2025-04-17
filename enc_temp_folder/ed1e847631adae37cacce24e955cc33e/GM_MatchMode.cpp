@@ -102,7 +102,6 @@ void AGM_MatchMode::PostLogin(APlayerController* NewPlayer)
 	if (PS)
 	{
 		PS->SetStock(3); 
-		PS->SetPlayerIndex(PlayerIndex);
 	}
 }
 
@@ -147,14 +146,10 @@ void AGM_MatchMode::HandlePlayerRespawn(AActor* PlayerActor)
 
 	// ===== 리스폰 처리 시작 =====
 
-	int32 PlayerIndex = PS->GetPlayerIndex(); 
+	int32 PlayerIndex = PS->GetPlayerId();
+
 	UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance());
-	
-	if (!GI->PlayerCharacterMap.Contains(PlayerIndex))
-	{
-		UE_LOG(LogTemp, Error, TEXT("❌ PlayerCharacterMap에 PlayerIndex %d 없음"), PlayerIndex);
-		return;
-	}
+	if (!GI) return;
 
 	if (!GI->PlayerCharacterMap.Contains(PlayerIndex))
 	{

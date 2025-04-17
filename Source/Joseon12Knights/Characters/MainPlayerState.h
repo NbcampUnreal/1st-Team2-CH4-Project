@@ -39,5 +39,13 @@ public:
 	UFUNCTION()
 	void OnRep_Stock();
 
+	UPROPERTY(BlueprintReadOnly)
+	int32 PlayerIndex = -1;
+
+	int32 GetPlayerIndex() const { return PlayerIndex; }
+	void SetPlayerIndex(int32 Index) { PlayerIndex = Index; }
+
+
+
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

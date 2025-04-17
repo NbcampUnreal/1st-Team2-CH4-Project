@@ -592,10 +592,12 @@ void APlayerCharacter::Dead()
 {
 	if (AGM_BaseMode* GM = Cast<AGM_BaseMode>(UGameplayStatics::GetGameMode(this)))
 	{
-
+		GM->HandlePlayerRespawn(this); 
 	}
-	ServerDead();
+
+	ServerDead(); 
 }
+
 
 void APlayerCharacter::ServerDead_Implementation()
 {
