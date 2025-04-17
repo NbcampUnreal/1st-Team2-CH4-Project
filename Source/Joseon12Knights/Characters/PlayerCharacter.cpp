@@ -11,6 +11,8 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
 #include "MainPlayerState.h"
+#include "Components/WidgetComponent.h"
+#include "Components/ProgressBar.h" 
 
 
 // Sets default values
@@ -87,6 +89,15 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 	bUseControllerRotationYaw = false;
+
+	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
+	OverheadWidget->SetupAttachment(GetMesh());
+	OverheadWidget->SetWidgetSpace(EWidgetSpace::Screen);
+}
+
+void APlayerCharacter::Respawn()
+{
+	InitializeData();
 }
 
 void APlayerCharacter::InitializeData()
@@ -106,6 +117,19 @@ void APlayerCharacter::InitializeData()
 }
 
 
+void APlayerCharacter::UpdateGauge(float FillAmount)
+{
+	if (!OverheadWidget) return;
+	UUserWidget* Gauge = OverheadWidget->GetUserWidgetObject();
+
+	if (!Gauge) return;
+	if (UProgressBar* PB = Cast<UProgressBar>(Gauge->GetWidgetFromName(TEXT("ProgressBar_257"))))
+	{
+		PB->SetPercent(FillAmount);
+	}
+
+}
+
 void APlayerCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 
@@ -118,7 +142,7 @@ void APlayerCharacter::OnWeaponOverlap(UPrimitiveComponent* OverlappedComp, AAct
 	if (APlayerCharacter* EnemyCharacter = Cast<APlayerCharacter>(OtherActor))
 	{
 		EndAttack();
-		UGameplayStatics::ApplyDamage(EnemyCharacter, 50.f, GetController(), this, UDamageType::StaticClass());
+		UGameplayStatics::ApplyDamage(EnemyCharacter, AttackDamage, GetController(), this, UDamageType::StaticClass());
 	}
 }
 
@@ -192,7 +216,8 @@ void APlayerCharacter::Tick(float DeltaTime)
 	if (GetWorld()->GetTimerManager().IsTimerActive(Timer))
 	{
 		RemainTime = GetWorld()->GetTimerManager().GetTimerRemaining(Timer);
-		UE_LOG(LogTemp, Warning, TEXT("%f"), RemainTime / 2);
+		UpdateGauge(RemainTime / 2);
+		//UE_LOG(LogTemp, Warning, TEXT("%f"), RemainTime / 2);
 	}
 }
 
@@ -339,7 +364,7 @@ void APlayerCharacter::Landed(const FHitResult& Hit)
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
+	if (bIsHit || !bIsAlive) return;
 	float AxisValue = Value.Get<float>();
 	FVector Movement = FVector(AxisValue * MoveSpeed, 0.f, 0.f);
 	AddMovementInput(Movement.GetSafeNormal(), 1.f);
@@ -370,7 +395,7 @@ void APlayerCharacter::MulticastSetDirection_Implementation(const FRotator& Rota
 
 void APlayerCharacter::StartJump(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
+	if (bIsHit || !bIsAlive) return;
 	ServerStartJump();
 }
 
@@ -405,7 +430,7 @@ void APlayerCharacter::StopJump(const FInputActionValue& Value)
 
 void APlayerCharacter::Dash(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
+	if (bIsHit || !bIsAlive) return;
 	ServerDash();
 }
 
@@ -436,7 +461,7 @@ void APlayerCharacter::MulticastDash_Implementation()
 
 void APlayerCharacter::Guard(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
+	if (bIsHit || !bIsAlive) return;
 	bool bIsGuard = Value.Get<bool>();
 
 	TestTimer();
@@ -462,7 +487,7 @@ void APlayerCharacter::Guard(const FInputActionValue& Value)
 
 void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
+	if (bIsHit || !bIsAlive) return;
 	bool bIsGuard = Value.Get<bool>();
 	bIsGuarding = false;
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
@@ -477,7 +502,7 @@ void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 
 void APlayerCharacter::NormalAttack(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
+	if (bIsHit || !bIsAlive) return;
 	ServerAttack();
 }
 
@@ -520,20 +545,6 @@ void APlayerCharacter::ServerDead_Implementation()
 void APlayerCharacter::MulticastDead_Implementation()
 {
 	bIsAlive = false;
-	/*AMainPlayerState* PS = GetPlayerState<AMainPlayerState>();
-	if (PS)
-	{
-		
-	}
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-
-	UAnimMontage* AM = MapAnim["Death"];
-
-	if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
-	{
-		AnimInstance->Montage_Play(AM);
-	}*/
 }
 
 void APlayerCharacter::BeginAttack()
@@ -565,6 +576,31 @@ float APlayerCharacter::CalculateDamage(float BaseDamage, APlayerCharacter* Atta
 
 	return BaseDamage * AttackerMultiplier / DefenderMultiplier;
 }
+
+void APlayerCharacter::Skill(const FInputActionValue& Value)
+{
+}
+
+void APlayerCharacter::Ultimate(const FInputActionValue& Value)
+{
+}
+
+void APlayerCharacter::ServerSkill_Implementation()
+{
+}
+
+void APlayerCharacter::MulticastSkill_Implementation()
+{
+}
+
+void APlayerCharacter::ServerUltimate_Implementation()
+{
+}
+
+void APlayerCharacter::MulticastUltimate_Implementation()
+{
+}
+
 
 void APlayerCharacter::SetHitState(bool IsHit)
 {

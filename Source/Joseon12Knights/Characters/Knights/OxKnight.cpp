@@ -7,6 +7,17 @@
 // ============
 void AOxKnight::Skill(const FInputActionValue& Value)
 {
+	ServerSkill();
+}
+
+void AOxKnight::ServerSkill_Implementation()
+{
+	MulticastSkill();
+}
+
+void AOxKnight::MulticastSkill_Implementation()
+{
+	PrimaryActorTick.bCanEverTick = true;
 	if (!bCanUseSkill)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("OxKnight W Skill is CoolDown.."));
@@ -87,6 +98,16 @@ void AOxKnight::StopPersistentSkillAnimation()
 // R Ultimate Logic
 // ==============
 void AOxKnight::Ultimate(const FInputActionValue& Value)
+{
+	ServerUltimate();
+}
+
+void AOxKnight::ServerUltimate_Implementation()
+{
+	MulticastUltimate();
+}
+
+void AOxKnight::MulticastUltimate_Implementation()
 {
 	// 전방으로 돌진해 스턴과 넉백효과 
 	if (!bCanUseUltimate)
@@ -186,6 +207,11 @@ void AOxKnight::PerformUltimateCollisionCheck()
 	}
 }
 
+
+AOxKnight::AOxKnight()
+{
+	bReplicates = true;
+}
 
 void AOxKnight::DebugPrintSelfBuffs() const
 {

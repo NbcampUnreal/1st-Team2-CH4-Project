@@ -15,6 +15,7 @@
 struct FInputActionValue;
 class UCameraComponent;
 class USpringArmComponent;
+class UWidgetComponent;
 
 UCLASS(Abstract, NotBlueprintable)
 class JOSEON12KNIGHTS_API APlayerCharacter : public ACharacter
@@ -25,7 +26,13 @@ public:
 	APlayerCharacter();
 
 	UFUNCTION(BlueprintCallable)
+	void Respawn();
+
+	UFUNCTION(BlueprintCallable)
 	void InitializeData();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	UWidgetComponent* OverheadWidget;
 
 protected:
 	bool bIsAlive;
@@ -34,6 +41,9 @@ protected:
 	float MaxHealth;
 	
 	FTimerHandle Timer;
+
+	UFUNCTION()
+	void UpdateGauge(float FillAmount);
 
 	UFUNCTION()
 	void OnCapsuleOverlap(
@@ -184,9 +194,23 @@ public:
 	float CalculateDamage(float BaseDamage, APlayerCharacter* Attacker);
 
 	UFUNCTION()
-	virtual void Skill(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Skill, );
+	virtual void Skill(const FInputActionValue& Value);
+
+	UFUNCTION(Server, Reliable)
+	virtual void ServerSkill();
+
+	UFUNCTION(NetMulticast, Reliable)
+	virtual void MulticastSkill();
+
 	UFUNCTION()
-	virtual void Ultimate(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Ultimate, );
+	virtual void Ultimate(const FInputActionValue& Value);
+
+	UFUNCTION(Server, Reliable)
+	virtual void ServerUltimate();
+
+	UFUNCTION(NetMulticast, Reliable)
+	virtual void MulticastUltimate();
+
 protected:
 	bool bIsGuarding;
 	bool bIsHit;

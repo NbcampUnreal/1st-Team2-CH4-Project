@@ -15,8 +15,17 @@ class JOSEON12KNIGHTS_API ARatKnight : public APlayerCharacter
 	GENERATED_BODY()
 
 protected:
-	void Skill(const FInputActionValue& Value) override; // W키 스킬 : 쥐구멍
-	void Ultimate(const FInputActionValue& Value) override; // R키 궁극기 : 1등 난타
+	virtual void Skill(const FInputActionValue& Value) override;
+
+	virtual void ServerSkill_Implementation() override;
+
+	virtual void MulticastSkill_Implementation() override;
+
+	virtual void Ultimate(const FInputActionValue& Value) override;
+
+	virtual void ServerUltimate_Implementation() override;
+
+	virtual void MulticastUltimate_Implementation() override;
 
 protected:
 	// ===========
