@@ -1,6 +1,7 @@
 #include "GM_MatchMode.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/PlayerStart.h"
+#include "MainPlayerController.h" 
 #include "EngineUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "GI_GameCoreInstance.h"
@@ -227,4 +228,33 @@ bool AGM_MatchMode::CanRespawn(AActor* PlayerActor) const
 void AGM_MatchMode::EndGame()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Game SET"));
+
+	int32 WinnerIndex = -1;
+	FString WinnerCharacter;
+
+	// 우선 승자 찾기
+	for (APlayerState* PS : GameState->PlayerArray)
+	{
+		AMainPlayerState* MPS = Cast<AMainPlayerState>(PS);
+		if (MPS && MPS->GetStock() > 0)
+		{
+			WinnerIndex = MPS->GetPlayerIndex();
+			WinnerCharacter = MPS->GetCharacterName();
+			break; // 승자 하나만 찾으면 됨
+		}
+	}
+
+	// 모든 플레이어에게 승리 UI 전달
+	for (APlayerState* PS : GameState->PlayerArray)
+	{
+		if (AMainPlayerState* MPS = Cast<AMainPlayerState>(PS))
+		{
+			if (AMainPlayerController* MPC = Cast<AMainPlayerController>(MPS->GetOwner()))
+			{
+				MPC->ClientReceiveVictory(WinnerIndex, WinnerCharacter); // 승자 정보 넘겨줌
+			}
+		}
+	}
 }
+
+

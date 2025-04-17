@@ -19,6 +19,9 @@ protected:
 	UPROPERTY(ReplicatedUsing = OnRep_Stock, BlueprintReadOnly, Category = "Status")
 	int32 Stock;
 
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Status")
+	FString CharacterName;
+
 public:
 	AMainPlayerState();
 
@@ -45,7 +48,12 @@ public:
 	int32 GetPlayerIndex() const { return PlayerIndex; }
 	void SetPlayerIndex(int32 Index) { PlayerIndex = Index; }
 
+	UFUNCTION(BlueprintCallable, Category = "Status")
+	FString GetCharacterName() const { return CharacterName; }
 
+	UFUNCTION(BlueprintCallable, Category = "Status")
+	void SetCharacterName(const FString& InName) { CharacterName = InName; }
 
+	// Replication
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
