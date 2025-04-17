@@ -359,6 +359,7 @@ bool APlayerCharacter::IsAlive() const
 void APlayerCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
+	JumpCurrentCount = 0;
 	bIsDoubleJump = false;
 }
 
@@ -414,7 +415,7 @@ void APlayerCharacter::MulticastStartJump_Implementation()
 	Jump();
 
 
-	if (JumpSound)
+	if (JumpSound && JumpCurrentCount < 3)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, JumpSound, GetActorLocation());
 	}
