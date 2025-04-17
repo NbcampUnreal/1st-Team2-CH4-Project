@@ -36,8 +36,13 @@ public:
 
 protected:
 	bool bIsAlive;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float AttackDamage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float CurrentHealth;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float MaxHealth;
 	float Defense;
 
