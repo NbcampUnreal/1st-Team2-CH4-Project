@@ -95,8 +95,12 @@ void UHUD_CharacterStory::ConfirmSelection()
 		GI->SelectedPlayMode = EPlayMode::Story;
 		GI->SelectedMap = StoryMapAsset;
 
-		const FString MapName = StoryMapAsset.ToSoftObjectPath().GetAssetName();
+		GI->PlayerLobbyInfos.Empty();
+		FPlayerLobbyInfo Info;
+		Info.SelectedCharacterID = SelectedCharacterID;
+		GI->PlayerLobbyInfos.Add(Info);
 
+		const FString MapName = StoryMapAsset.ToSoftObjectPath().GetAssetName();
 		UGameplayStatics::OpenLevel(this, FName(*MapName));
 	}
 }
