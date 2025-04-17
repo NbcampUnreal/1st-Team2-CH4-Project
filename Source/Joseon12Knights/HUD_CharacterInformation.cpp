@@ -43,10 +43,13 @@ void UHUD_CharacterInformation::UpdateHUD()
 	if (StockBox)
 	{
 		int32 Stock = PS->GetStock();
-		FString StockStr = FString::Printf(TEXT("%d"), Stock);
-		StockBox->SetText(FText::FromString(StockStr));
-
+		if (Stock >= 0 && Stock <= 10) 
+		{
+			FString StockStr = FString::Printf(TEXT("%d"), Stock);
+			StockBox->SetText(FText::FromString(StockStr));
+		}
 	}
+
 
 
 	if (CharacterNameText)
@@ -71,10 +74,22 @@ void UHUD_CharacterInformation::UpdateHUD()
 	{
 		float MaxHP = PS->GetMaxHealth();
 		float CurrHP = PS->GetCurrentHealth();
-		float Percent = CurrHP / MaxHP;
-		SuperBar->SetPercent(Percent);
+
+		float TruePercent = CurrHP / MaxHP;
+
+		float VisualPercent = (TruePercent >= 1.0f)
+			? 1.0f
+			: FMath::Clamp(TruePercent * 0.5f, 0.f, 1.f);
+
+		SuperBar->SetPercent(VisualPercent);
+
+
 		
 	}
+
+
+
+
 
 	if (Portrate && GI && CharacterIconMap.Contains(GI->SelectedCharacterID))
 	{

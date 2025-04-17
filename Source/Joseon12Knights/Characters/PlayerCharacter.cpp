@@ -109,6 +109,9 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 
 void APlayerCharacter::Respawn()
 {
+	bIsDead = false;
+
+	CurrentHealth = MaxHealth;
 	InitializeData();
 }
 
@@ -592,10 +595,12 @@ void APlayerCharacter::Dead()
 {
 	if (AGM_BaseMode* GM = Cast<AGM_BaseMode>(UGameplayStatics::GetGameMode(this)))
 	{
-
+		GM->HandlePlayerRespawn(this); 
 	}
-	ServerDead();
+
+	ServerDead(); 
 }
+
 
 void APlayerCharacter::ServerDead_Implementation()
 {

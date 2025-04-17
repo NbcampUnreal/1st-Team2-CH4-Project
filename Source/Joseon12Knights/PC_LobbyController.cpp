@@ -85,6 +85,7 @@ void APC_LobbyController::HandleEnterKey()
 
     if (HasAuthority())
     {
+        Server_PressReady();
         Server_AttemptStartMatch();
     }
     else

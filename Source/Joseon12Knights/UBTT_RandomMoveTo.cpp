@@ -26,15 +26,15 @@ EBTNodeResult::Type UUBTT_RandomMoveTo::ExecuteTask(UBehaviorTreeComponent& Owne
 	if (!NavSys)
 		return EBTNodeResult::Failed;
 
-	// ÀÌµ¿ ¹æÇâ ¼³Á¤
+	// ï¿½Ìµï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	int32 DirectionSign = FMath::RandBool() ? 1 : -1;
 	float MoveDistance = FMath::FRandRange(MinDistance, MaxDistance);
-	FVector MoveDirection = FVector(1, 0, 0); // ¶Ç´Â YÃà ±â¹ÝÀÌ¸é (0,1,0)
+	FVector MoveDirection = FVector(1, 0, 0); // ï¿½Ç´ï¿½ Yï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Ì¸ï¿½ (0,1,0)
 
 	FVector StartLocation = Pawn->GetActorLocation();
 	FVector TargetLocation = StartLocation + (MoveDirection * MoveDistance * DirectionSign);
 
-	// È¸Àü ¹æÇâ ¼³Á¤
+	// È¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	FRotator NewRotation = FRotator::ZeroRotator;
 	NewRotation.Yaw = (DirectionSign > 0) ? 0.f : 180.f;
 	Pawn->SetActorRotation(NewRotation);
