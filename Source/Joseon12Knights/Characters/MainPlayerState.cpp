@@ -34,9 +34,23 @@ void AMainPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMainPlayerState, Stock);
+	DOREPLIFETIME(AMainPlayerState, CurrentHealth);
+	DOREPLIFETIME(AMainPlayerState, MaxHealth);
+
 }
 
 void AMainPlayerState::OnRep_Stock()
 {
 	UE_LOG(LogTemp, Warning, TEXT("✔️ OnRep_Stock called: %d"), Stock);
+}
+
+
+void AMainPlayerState::OnRep_CurrentHealth()
+{
+	UE_LOG(LogTemp, Warning, TEXT("🩸 체력 변경됨: %.1f"), CurrentHealth);
+}
+
+void AMainPlayerState::OnRep_MaxHealth()
+{
+	UE_LOG(LogTemp, Warning, TEXT("🧱 최대 체력 변경됨: %.1f"), MaxHealth);
 }

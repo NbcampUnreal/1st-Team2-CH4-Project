@@ -207,6 +207,8 @@ void AGM_MatchMode::HandlePlayerRespawn(AActor* PlayerActor)
 
 		UE_LOG(LogTemp, Warning, TEXT("Player %d 리스폰 완료 at %s"), PlayerIndex, *SpawnName);
 	}
+
+
 }
 
 

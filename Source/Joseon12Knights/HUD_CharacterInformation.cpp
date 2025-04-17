@@ -74,10 +74,15 @@ void UHUD_CharacterInformation::UpdateHUD()
 	{
 		float MaxHP = PS->GetMaxHealth();
 		float CurrHP = PS->GetCurrentHealth();
-		float Percent = CurrHP / MaxHP;
-		SuperBar->SetPercent(Percent);
-		
+
+		float VisualPercent = FMath::Clamp((CurrHP / MaxHP) * 0.5f, 0.f, 1.f);
+
+		SuperBar->SetPercent(VisualPercent);
+
 	}
+
+
+
 
 	if (Portrate && GI && CharacterIconMap.Contains(GI->SelectedCharacterID))
 	{

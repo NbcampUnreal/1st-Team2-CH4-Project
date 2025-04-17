@@ -10,11 +10,18 @@ class JOSEON12KNIGHTS_API AMainPlayerState : public APlayerState
 	GENERATED_BODY()
 
 protected:
-	UPROPERTY(BlueprintReadOnly, Category = "Status")
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentHealth, BlueprintReadOnly, Category = "Status")
+	float CurrentHealth;
+
+	UPROPERTY(ReplicatedUsing = OnRep_MaxHealth, BlueprintReadOnly, Category = "Status")
 	float MaxHealth;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Status")
-	float CurrentHealth;
+	UFUNCTION()
+	void OnRep_CurrentHealth();
+
+	UFUNCTION()
+	void OnRep_MaxHealth();
+
 
 	UPROPERTY(ReplicatedUsing = OnRep_Stock, BlueprintReadOnly, Category = "Status")
 	int32 Stock;
