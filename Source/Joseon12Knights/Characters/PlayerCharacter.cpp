@@ -221,7 +221,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 	}
 }
 
-void APlayerCharacter::UpdateMovementSpeed() // �??�레?�마???�출?�어 ?�동 ?�도�??�데?�트.
+void APlayerCharacter::UpdateMovementSpeed() // �??�레?�마???�출?�어 ?�동 ?�도�??�데?�트.
 {
 	if (GetCharacterMovement() && BuffComponent)
 	{
@@ -467,7 +467,7 @@ void APlayerCharacter::Guard(const FInputActionValue& Value)
 
 	TestTimer();
 
-	// ���� ���
+	// ���� ���
 	if (!bIsGuarding && bIsGuard && GuardSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
@@ -613,23 +613,23 @@ void APlayerCharacter::SetHitState(bool IsHit)
 // =============
 APlayerCharacter* APlayerCharacter::GetTargetPlayer()
 {
-	FVector AttackOrigin; // 공격 ?�작 ?�치
+	FVector AttackOrigin; // 공격 ?�작 ?�치
 
-	// 무기가 ?�으�?무기 ?�켓 ?�치?�서 ?�작?�도�??�정
+	// 무기가 ?�으�?무기 ?�켓 ?�치?�서 ?�작?�도�??�정
 	if (WeaponComponent && WeaponComponent->DoesSocketExist(FName("WeaponSocket")))
 	{
 		AttackOrigin = WeaponComponent->GetSocketLocation(FName("WeaponSocket"));
 	}
-	// 그렇지 ?�으�?캐릭???�쪽???�치?�도�??�정
+	// 그렇지 ?�으�?캐릭???�쪽???�치?�도�??�정
 	else
 	{
 		AttackOrigin = GetActorLocation() + GetActorForwardVector() * ForwardOffset;
 	}
 
-	TArray<APlayerCharacter*> PotentialTargets = FindTargetsInRadius(AttackOrigin, AttackRadius); // 공격 범위 ?�의 모든 캐릭?��? 찾음
-	APlayerCharacter* BestTarget = SelectBestTarget(PotentialTargets); // 가???�합???��??�택
+	TArray<APlayerCharacter*> PotentialTargets = FindTargetsInRadius(AttackOrigin, AttackRadius); // 공격 범위 ?�의 모든 캐릭?��? 찾음
+	APlayerCharacter* BestTarget = SelectBestTarget(PotentialTargets); // 가???�합???��??�택
 
-	if (bDebugTargeting) // ?�버�??�각??
+	if (bDebugTargeting) // ?�버�??�각??
 	{
 		DrawDebugSphere(GetWorld(), AttackOrigin, AttackRadius, 24,
 			BestTarget ? FColor::Green : FColor::Red, false, 1.0f);
@@ -649,27 +649,27 @@ TArray<APlayerCharacter*> APlayerCharacter::FindTargetsInRadius(const FVector& O
 	TArray<APlayerCharacter*> FoundTargets;
 	TArray<FOverlapResult> OverlapResults;
 	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this); // ?�신?� ?�외
+	QueryParams.AddIgnoredActor(this); // ?�신?� ?�외
 
-	// 물체 ?�버??검???�행
+	// 물체 ?�버??검???�행
 	bool bOverlapFound = GetWorld()->OverlapMultiByObjectType(
 		OverlapResults,
 		Origin,
 		FQuat::Identity,
-		FCollisionObjectQueryParams(TargetCollisionChannel), // 지?�된 채널???�??검??
+		FCollisionObjectQueryParams(TargetCollisionChannel), // 지?�된 채널???�??검??
 		FCollisionShape::MakeSphere(Radius),
 		QueryParams
 	);
 
 	if (bOverlapFound)
 	{
-		// ?�버?�된 APlayerCharacter ?�?�만 ?�터�?
+		// ?�버?�된 APlayerCharacter ?�?�만 ?�터�?
 		for (const FOverlapResult& Overlap : OverlapResults)
 		{
 			APlayerCharacter* PlayerChar = Cast<APlayerCharacter>(Overlap.GetActor());
 			if (PlayerChar && PlayerChar != this)
 			{
-				// ?� 기능 구현???�른 ?��??�겟팅?�도�??�터�?추�?
+				// ?� 기능 구현???�른 ?��??�겟팅?�도�??�터�?추�?
 				// if (PlayerChar->GetTeam() != GetTeam()) 
 				// {
 				FoundTargets.Add(PlayerChar);
@@ -688,8 +688,8 @@ APlayerCharacter* APlayerCharacter::SelectBestTarget(const TArray<APlayerCharact
 		return nullptr;
 	}
 
-	// ?��??�택 기�?:
-	// 1. ?�선?�위: ???�야�??�에 ?�는 ??
+	// ?��??�택 기�?:
+	// 1. ?�선?�위: ???�야�??�에 ?�는 ??
 	// 2. 거리: 가??가까운 ??
 
 	APlayerCharacter* BestTarget = nullptr;
@@ -698,8 +698,8 @@ APlayerCharacter* APlayerCharacter::SelectBestTarget(const TArray<APlayerCharact
 	FVector Forward = GetActorForwardVector();
 	FVector ActorLocation = GetActorLocation();
 
-	const float ViewAngleCos = FMath::Cos(FMath::DegreesToRadians(60.0f)); // 60???�야�?
-	const float ViewAngleWeight = 2.0f; // ?�야�????�에 가중치
+	const float ViewAngleCos = FMath::Cos(FMath::DegreesToRadians(60.0f)); // 60???�야�?
+	const float ViewAngleWeight = 2.0f; // ?�야�????�에 가중치
 
 	for (APlayerCharacter* Target : PotentialTargets)
 	{
@@ -708,17 +708,17 @@ APlayerCharacter* APlayerCharacter::SelectBestTarget(const TArray<APlayerCharact
 		FVector ToTarget = Target->GetActorLocation() - ActorLocation;
 		float Distance = ToTarget.Size();
 
-		float DistanceScore = 1.0f / FMath::Max(Distance, 1.0f); // 거리??반비례?�는 ?�수 계산 (가까울?�록 ?�음)
+		float DistanceScore = 1.0f / FMath::Max(Distance, 1.0f); // 거리??반비례?�는 ?�수 계산 (가까울?�록 ?�음)
 
-		ToTarget.Normalize(); // 방향 ?�규??
+		ToTarget.Normalize(); // 방향 ?�규??
 
-		float DotProduct = FVector::DotProduct(Forward, ToTarget); // ?�방 벡터?� ?��?방향 벡터???�적 계산
+		float DotProduct = FVector::DotProduct(Forward, ToTarget); // ?�방 벡터?� ?��?방향 벡터???�적 계산
 
-		float AngleScore = DotProduct > ViewAngleCos ? ViewAngleWeight : 1.0f; // ?�야�??�에 ?�는지 ?�인 (DotProduct > ViewAngleCos�??�야�??�에 ?�음)
+		float AngleScore = DotProduct > ViewAngleCos ? ViewAngleWeight : 1.0f; // ?�야�??�에 ?�는지 ?�인 (DotProduct > ViewAngleCos�??�야�??�에 ?�음)
 
-		float FinalScore = DistanceScore * AngleScore; // 최종 ?�수 계산
+		float FinalScore = DistanceScore * AngleScore; // 최종 ?�수 계산
 
-		// ??좋�? ?�수???�겟이�?갱신
+		// ??좋�? ?�수???�겟이�?갱신
 		if (FinalScore > BestScore)
 		{
 			BestScore = FinalScore;

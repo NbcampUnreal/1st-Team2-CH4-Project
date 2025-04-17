@@ -98,4 +98,47 @@ void AGM_MatchMode::PostLogin(APlayerController* NewPlayer)
 		}
 	}
 
+	AMainPlayerState* PS = Cast<AMainPlayerState>(NewPlayer->PlayerState);
+	if (PS)
+	{
+		PS->SetStock(3); 
+	}
+}
+
+
+void AGM_MatchMode::HandlePlayerRespawn(AActor* PlayerActor)
+{
+	APawn* Pawn = Cast<APawn>(PlayerActor);
+	if (!Pawn) return;
+
+	AController* PC = Pawn->GetController();
+	if (!PC) return;
+
+	AMainPlayerState* PS = Cast<AMainPlayerState>(PC->PlayerState);
+	if (!PS) return;
+
+	int32 Lives = PS->GetStock();
+	Lives--;
+	PS->SetStock(Lives);
+
+
+	if (Lives <= 0)
+	{
+		// 게임 종료 
+	}
+}
+
+
+bool AGM_MatchMode::CanRespawn(AActor* PlayerActor) const
+{
+	APawn* Pawn = Cast<APawn>(PlayerActor);
+	if (!Pawn) return false;
+
+	AController* PC = Pawn->GetController();
+	if (!PC) return false;
+
+	AMainPlayerState* PS = Cast<AMainPlayerState>(PC->PlayerState);
+	if (!PS) return false;
+
+	return PS->GetStock() > 0;
 }

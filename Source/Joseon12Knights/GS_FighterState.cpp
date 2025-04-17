@@ -23,3 +23,5 @@ void AGS_FighterState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(AGS_FighterState, bShowModeSelectUI);
 	DOREPLIFETIME(AGS_FighterState, PlayerStates);
 }
+
+
