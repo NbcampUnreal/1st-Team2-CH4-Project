@@ -13,6 +13,7 @@
 #include "MainPlayerState.h"
 #include "Components/WidgetComponent.h"
 #include "Components/ProgressBar.h" 
+#include "../GM_BaseMode.h"
 
 
 // Sets default values
@@ -84,6 +85,8 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 	Capsule->CanCharacterStepUpOn = ECB_No;
 	Capsule->ComponentTags.Add("Player");
 
+	
+
 	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
 	StatComponent = CreateDefaultSubobject<UStatComponent>(TEXT("StatComponent"));
 
@@ -93,8 +96,15 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
 	OverheadWidget->SetupAttachment(GetMesh());
 	OverheadWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	OverheadWidget->SetDrawSize(FVector2D(100.f, 50.f));
 
 	OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, 170.f));
+
+	static ConstructorHelpers::FClassFinder<UUserWidget> WidgetClassFinder(TEXT("/Game/Test/WBP_GuardGauge"));
+	if (WidgetClassFinder.Succeeded())
+	{
+		OverheadWidget->SetWidgetClass(WidgetClassFinder.Class);
+	}
 }
 
 void APlayerCharacter::Respawn()
@@ -157,7 +167,7 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 {
 	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	//if (!IsLocallyControlled()) return 0.0f;
-	if (bIsHit) return 0.0f;
+	if (bIsHit || !bIsAlive) return 0.0f;
 	
 	float KnockBackDistance = bIsGuarding ? 500.f : 1000.f;
 
@@ -167,7 +177,8 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-	CurrentHealth -= DamageAmount;
+	FString AnimKey = bIsGuarding ? TEXT("GuardHit") : TEXT("Hit");
+	CurrentHealth = bIsGuarding ? CurrentHealth : CurrentHealth -= DamageAmount;
 	
 	UE_LOG(LogTemp, Warning, TEXT("Hit ! Current Health : %f"), CurrentHealth);
 
@@ -178,7 +189,6 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 	}
 	else
 	{
-		FString AnimKey = bIsGuarding ? TEXT("GuardHit") : TEXT("Hit");
 		AMainPlayerState* PS = GetPlayerState<AMainPlayerState>();
 		if (PS)
 		{
@@ -207,6 +217,8 @@ void APlayerCharacter::BeginPlay()
 	AttackDamage = StatComponent->GetAttack();
 	MaxHealth = StatComponent->GetMaxHP();
 	CurrentHealth = MaxHealth;
+	bCanGuard = true;
+	OverheadWidget->SetVisibility(false);
 }
 
 void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -224,7 +236,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 	if (GetWorld()->GetTimerManager().IsTimerActive(GuardTimerHandle))
 	{
 		RemainTime = GetWorld()->GetTimerManager().GetTimerRemaining(GuardTimerHandle);
-		UpdateGauge(RemainTime / 2);
+		UpdateGauge(RemainTime / GuardDuration);
 	}
 }
 
@@ -347,7 +359,7 @@ void APlayerCharacter::GuardTimer()
 			FTimerDelegate::CreateLambda([this]()
 				{
 					UE_LOG(LogTemp, Warning, TEXT("GuardEnd"));
-
+					ServerReleaseGuard();
 				}),
 			GuardDuration,
 			false
@@ -467,6 +479,8 @@ void APlayerCharacter::MulticastDash_Implementation()
 
 void APlayerCharacter::Guard(const FInputActionValue& Value)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Guard"));
+	if (!bCanGuard) return;
 	ServerGuard();
 }
 
@@ -478,11 +492,14 @@ void APlayerCharacter::ServerGuard_Implementation()
 void APlayerCharacter::MulticastGuard_Implementation()
 {
 	if (bIsHit || !bIsAlive) return;
-	//bool bIsGuard = Value.Get<bool>();
-	//&& bIsGuard&&
-	GuardTimer();
+	
+	if (!bIsGuarding)
+	{
+		GuardTimer();
+		OverheadWidget->SetVisibility(true);
+		bIsGuarding = true;
+	}
 
-	// »ç¿îµå Àç»ý
 	if (!bIsGuarding && GuardSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
@@ -497,14 +514,14 @@ void APlayerCharacter::MulticastGuard_Implementation()
 		AnimInstance->StopAllMontages(1);
 		AnimInstance->Montage_Play(AM);
 	}
-
-	bIsGuarding = true;
 }
 
 void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 {
-	if (bIsHit || !bIsAlive) return;
-	//bool bIsGuard = Value.Get<bool>();
+	UE_LOG(LogTemp, Warning, TEXT("Release"));
+
+	if (bIsHit || !bIsAlive || !bCanGuard) return;
+	
 	ServerReleaseGuard();
 }
 
@@ -515,7 +532,9 @@ void APlayerCharacter::ServerReleaseGuard_Implementation()
 
 void APlayerCharacter::MulticastReleaseGuard_Implementation()
 {
+	bCanGuard = false;
 	bIsGuarding = false;
+	OverheadWidget->SetVisibility(false);
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
 	UAnimMontage* AM = MapAnim["Guard"];
@@ -524,6 +543,17 @@ void APlayerCharacter::MulticastReleaseGuard_Implementation()
 	{
 		AnimInstance->Montage_Stop(0.1f, AM);
 	}
+
+	GetWorld()->GetTimerManager().ClearTimer(GuardTimerHandle);
+
+	GetWorld()->GetTimerManager().SetTimer(ReleaseGuardTimerHandle,
+		FTimerDelegate::CreateLambda([this]()
+			{
+				bCanGuard = true;
+			}),
+		1.0f,
+		false
+	);
 }
 
 void APlayerCharacter::NormalAttack(const FInputActionValue& Value)
@@ -560,6 +590,10 @@ void APlayerCharacter::MulticastAttack_Implementation()
 
 void APlayerCharacter::Dead()
 {
+	if (AGM_BaseMode* GM = Cast<AGM_BaseMode>(UGameplayStatics::GetGameMode(this)))
+	{
+
+	}
 	ServerDead();
 }
 
@@ -571,6 +605,8 @@ void APlayerCharacter::ServerDead_Implementation()
 void APlayerCharacter::MulticastDead_Implementation()
 {
 	bIsAlive = false;
+
+
 }
 
 void APlayerCharacter::BeginAttack()

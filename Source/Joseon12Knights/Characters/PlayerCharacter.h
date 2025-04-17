@@ -64,7 +64,7 @@ protected:
 	bool bIsMaxGuardGauge;
 	bool bCanGuard;
 	FTimerHandle GuardTimerHandle;
-	
+	FTimerHandle ReleaseGuardTimerHandle;
 #pragma endregion
 
 	UFUNCTION()
@@ -183,10 +183,10 @@ public:
 	UFUNCTION()
 	void Guard(const FInputActionValue& Value);
 
-	UFUNCTION(Server, Reliable)
+	UFUNCTION(Server, Unreliable)
 	void ServerGuard();
 
-	UFUNCTION(NetMulticast, Reliable)
+	UFUNCTION(NetMulticast, Unreliable)
 	void MulticastGuard();
 
 	UFUNCTION()
