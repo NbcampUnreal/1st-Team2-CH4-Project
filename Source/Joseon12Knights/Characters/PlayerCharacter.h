@@ -39,11 +39,28 @@ protected:
 	float AttackDamage;
 	float CurrentHealth;
 	float MaxHealth;
-	
-	FTimerHandle Timer;
+	float Defense;
 
+#pragma region Guard
 	UFUNCTION()
 	void UpdateGauge(float FillAmount);
+
+	UFUNCTION()
+	void RechargeGuardGauge();
+
+	UFUNCTION()
+	void GuardTimer();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Temp")
+	float RemainTime;
+
+	const float GuardDuration = 5.0f;
+	float RechargeGuard;
+	bool bIsMaxGuardGauge;
+	bool bCanGuard;
+	FTimerHandle GuardTimerHandle;
+	
+#pragma endregion
 
 	UFUNCTION()
 	void OnCapsuleOverlap(
@@ -121,11 +138,8 @@ protected:
 public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	UFUNCTION()
-	void TestTimer();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Temp")
-	float RemainTime;
+
 
 	UFUNCTION(BlueprintCallable)
 	bool IsAlive() const;
@@ -164,8 +178,19 @@ public:
 	UFUNCTION()
 	void Guard(const FInputActionValue& Value);
 
+	UFUNCTION(Server, Reliable)
+	void ServerGuard();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastGuard();
+
 	UFUNCTION()
 	void ReleaseGuard(const FInputActionValue& Value);
+	UFUNCTION(Server, Reliable)
+	void ServerReleaseGuard();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastReleaseGuard();
 
 	UFUNCTION()
 	void NormalAttack(const FInputActionValue& Value);

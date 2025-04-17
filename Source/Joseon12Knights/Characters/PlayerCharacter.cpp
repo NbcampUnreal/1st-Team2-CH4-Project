@@ -93,6 +93,8 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
 	OverheadWidget->SetupAttachment(GetMesh());
 	OverheadWidget->SetWidgetSpace(EWidgetSpace::Screen);
+
+	OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, 170.f));
 }
 
 void APlayerCharacter::Respawn()
@@ -213,11 +215,10 @@ void APlayerCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	UpdateMovementSpeed();
 
-	if (GetWorld()->GetTimerManager().IsTimerActive(Timer))
+	if (GetWorld()->GetTimerManager().IsTimerActive(GuardTimerHandle))
 	{
-		RemainTime = GetWorld()->GetTimerManager().GetTimerRemaining(Timer);
+		RemainTime = GetWorld()->GetTimerManager().GetTimerRemaining(GuardTimerHandle);
 		UpdateGauge(RemainTime / 2);
-		//UE_LOG(LogTemp, Warning, TEXT("%f"), RemainTime / 2);
 	}
 }
 
@@ -327,27 +328,25 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	}
 }
 
-void APlayerCharacter::TestTimer()
+void APlayerCharacter::GuardTimer()
 {
-	if (GetWorld()->GetTimerManager().IsTimerActive(Timer))
+	if (GetWorld()->GetTimerManager().IsTimerActive(GuardTimerHandle))
 	{
 		return;
 	}
 	else
 	{
 		GetWorldTimerManager().SetTimer(
-			Timer,
+			GuardTimerHandle,
 			FTimerDelegate::CreateLambda([this]()
 				{
-					UE_LOG(LogTemp, Warning, TEXT("Test Timer!!"));
+					UE_LOG(LogTemp, Warning, TEXT("GuardEnd"));
 
 				}),
-			2.0f,
+			GuardDuration,
 			false
 		);
 	}
-
-
 }
 
 
@@ -413,7 +412,6 @@ void APlayerCharacter::MulticastStartJump_Implementation()
 
 	Jump();
 
-
 	if (JumpSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, JumpSound, GetActorLocation());
@@ -461,13 +459,23 @@ void APlayerCharacter::MulticastDash_Implementation()
 
 void APlayerCharacter::Guard(const FInputActionValue& Value)
 {
-	if (bIsHit || !bIsAlive) return;
-	bool bIsGuard = Value.Get<bool>();
+	ServerGuard();
+}
 
-	TestTimer();
+void APlayerCharacter::ServerGuard_Implementation()
+{
+	MulticastGuard();
+}
+
+void APlayerCharacter::MulticastGuard_Implementation()
+{
+	if (bIsHit || !bIsAlive) return;
+	//bool bIsGuard = Value.Get<bool>();
+	//&& bIsGuard&&
+	GuardTimer();
 
 	// 사운드 재생
-	if (!bIsGuarding && bIsGuard && GuardSound)
+	if (!bIsGuarding && GuardSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
 	}
@@ -488,7 +496,17 @@ void APlayerCharacter::Guard(const FInputActionValue& Value)
 void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 {
 	if (bIsHit || !bIsAlive) return;
-	bool bIsGuard = Value.Get<bool>();
+	//bool bIsGuard = Value.Get<bool>();
+	ServerReleaseGuard();
+}
+
+void APlayerCharacter::ServerReleaseGuard_Implementation()
+{
+	MulticastReleaseGuard();
+}
+
+void APlayerCharacter::MulticastReleaseGuard_Implementation()
+{
 	bIsGuarding = false;
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
