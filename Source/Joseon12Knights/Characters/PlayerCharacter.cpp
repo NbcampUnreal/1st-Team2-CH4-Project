@@ -93,6 +93,8 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
 	OverheadWidget->SetupAttachment(GetMesh());
 	OverheadWidget->SetWidgetSpace(EWidgetSpace::Screen);
+
+	OverheadWidget->SetRelativeLocation(FVector(0.f, 0.f, 170.f));
 }
 
 void APlayerCharacter::Respawn()
@@ -130,6 +132,11 @@ void APlayerCharacter::UpdateGauge(float FillAmount)
 
 }
 
+void APlayerCharacter::RechargeGuardGauge()
+{
+
+}
+
 void APlayerCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 
@@ -148,6 +155,7 @@ void APlayerCharacter::OnWeaponOverlap(UPrimitiveComponent* OverlappedComp, AAct
 
 float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	//if (!IsLocallyControlled()) return 0.0f;
 	if (bIsHit) return 0.0f;
 	
@@ -213,15 +221,14 @@ void APlayerCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	UpdateMovementSpeed();
 
-	if (GetWorld()->GetTimerManager().IsTimerActive(Timer))
+	if (GetWorld()->GetTimerManager().IsTimerActive(GuardTimerHandle))
 	{
-		RemainTime = GetWorld()->GetTimerManager().GetTimerRemaining(Timer);
+		RemainTime = GetWorld()->GetTimerManager().GetTimerRemaining(GuardTimerHandle);
 		UpdateGauge(RemainTime / 2);
-		//UE_LOG(LogTemp, Warning, TEXT("%f"), RemainTime / 2);
 	}
 }
 
-void APlayerCharacter::UpdateMovementSpeed() // �??�레?�마???�출?�어 ?�동 ?�도�??�데?�트.
+void APlayerCharacter::UpdateMovementSpeed() // ë§??„ë ˆ?„ë§ˆ???¸ì¶œ?˜ì–´ ?´ë™ ?ë„ë¥??…ë°?´íŠ¸.
 {
 	if (GetCharacterMovement() && BuffComponent)
 	{
@@ -327,27 +334,25 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	}
 }
 
-void APlayerCharacter::TestTimer()
+void APlayerCharacter::GuardTimer()
 {
-	if (GetWorld()->GetTimerManager().IsTimerActive(Timer))
+	if (GetWorld()->GetTimerManager().IsTimerActive(GuardTimerHandle))
 	{
 		return;
 	}
 	else
 	{
 		GetWorldTimerManager().SetTimer(
-			Timer,
+			GuardTimerHandle,
 			FTimerDelegate::CreateLambda([this]()
 				{
-					UE_LOG(LogTemp, Warning, TEXT("Test Timer!!"));
+					UE_LOG(LogTemp, Warning, TEXT("GuardEnd"));
 
 				}),
-			2.0f,
+			GuardDuration,
 			false
 		);
 	}
-
-
 }
 
 
@@ -414,8 +419,8 @@ void APlayerCharacter::MulticastStartJump_Implementation()
 
 	Jump();
 
-
 	if (JumpSound && JumpCurrentCount < 3)
+
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, JumpSound, GetActorLocation());
 	}
@@ -462,13 +467,23 @@ void APlayerCharacter::MulticastDash_Implementation()
 
 void APlayerCharacter::Guard(const FInputActionValue& Value)
 {
+	ServerGuard();
+}
+
+void APlayerCharacter::ServerGuard_Implementation()
+{
+	MulticastGuard();
+}
+
+void APlayerCharacter::MulticastGuard_Implementation()
+{
 	if (bIsHit || !bIsAlive) return;
-	bool bIsGuard = Value.Get<bool>();
+	//bool bIsGuard = Value.Get<bool>();
+	//&& bIsGuard&&
+	GuardTimer();
 
-	TestTimer();
-
-	// ���� ���
-	if (!bIsGuarding && bIsGuard && GuardSound)
+	// »ç¿îµå Àç»ý
+	if (!bIsGuarding && GuardSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, GuardSound, GetActorLocation());
 	}
@@ -489,7 +504,17 @@ void APlayerCharacter::Guard(const FInputActionValue& Value)
 void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 {
 	if (bIsHit || !bIsAlive) return;
-	bool bIsGuard = Value.Get<bool>();
+	//bool bIsGuard = Value.Get<bool>();
+	ServerReleaseGuard();
+}
+
+void APlayerCharacter::ServerReleaseGuard_Implementation()
+{
+	MulticastReleaseGuard();
+}
+
+void APlayerCharacter::MulticastReleaseGuard_Implementation()
+{
 	bIsGuarding = false;
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
@@ -613,23 +638,23 @@ void APlayerCharacter::SetHitState(bool IsHit)
 // =============
 APlayerCharacter* APlayerCharacter::GetTargetPlayer()
 {
-	FVector AttackOrigin; // 공격 ?�작 ?�치
+	FVector AttackOrigin; // ê³µê²© ?œìž‘ ?„ì¹˜
 
-	// 무기가 ?�으�?무기 ?�켓 ?�치?�서 ?�작?�도�??�정
+	// ë¬´ê¸°ê°€ ?ˆìœ¼ë©?ë¬´ê¸° ?Œì¼“ ?„ì¹˜?ì„œ ?œìž‘?˜ë„ë¡??¤ì •
 	if (WeaponComponent && WeaponComponent->DoesSocketExist(FName("WeaponSocket")))
 	{
 		AttackOrigin = WeaponComponent->GetSocketLocation(FName("WeaponSocket"));
 	}
-	// 그렇지 ?�으�?캐릭???�쪽???�치?�도�??�정
+	// ê·¸ë ‡ì§€ ?Šìœ¼ë©?ìºë¦­???žìª½???„ì¹˜?˜ë„ë¡??¤ì •
 	else
 	{
 		AttackOrigin = GetActorLocation() + GetActorForwardVector() * ForwardOffset;
 	}
 
-	TArray<APlayerCharacter*> PotentialTargets = FindTargetsInRadius(AttackOrigin, AttackRadius); // 공격 범위 ?�의 모든 캐릭?��? 찾음
-	APlayerCharacter* BestTarget = SelectBestTarget(PotentialTargets); // 가???�합???��??�택
+	TArray<APlayerCharacter*> PotentialTargets = FindTargetsInRadius(AttackOrigin, AttackRadius); // ê³µê²© ë²”ìœ„ ?´ì˜ ëª¨ë“  ìºë¦­?°ë? ì°¾ìŒ
+	APlayerCharacter* BestTarget = SelectBestTarget(PotentialTargets); // ê°€???í•©???€ê²?? íƒ
 
-	if (bDebugTargeting) // ?�버�??�각??
+	if (bDebugTargeting) // ?”ë²„ê·??œê°??
 	{
 		DrawDebugSphere(GetWorld(), AttackOrigin, AttackRadius, 24,
 			BestTarget ? FColor::Green : FColor::Red, false, 1.0f);
@@ -649,27 +674,27 @@ TArray<APlayerCharacter*> APlayerCharacter::FindTargetsInRadius(const FVector& O
 	TArray<APlayerCharacter*> FoundTargets;
 	TArray<FOverlapResult> OverlapResults;
 	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this); // ?�신?� ?�외
+	QueryParams.AddIgnoredActor(this); // ?ì‹ ?€ ?œì™¸
 
-	// 물체 ?�버??검???�행
+	// ë¬¼ì²´ ?¤ë²„??ê²€???˜í–‰
 	bool bOverlapFound = GetWorld()->OverlapMultiByObjectType(
 		OverlapResults,
 		Origin,
 		FQuat::Identity,
-		FCollisionObjectQueryParams(TargetCollisionChannel), // 지?�된 채널???�??검??
+		FCollisionObjectQueryParams(TargetCollisionChannel), // ì§€?•ëœ ì±„ë„???€??ê²€??
 		FCollisionShape::MakeSphere(Radius),
 		QueryParams
 	);
 
 	if (bOverlapFound)
 	{
-		// ?�버?�된 APlayerCharacter ?�?�만 ?�터�?
+		// ?¤ë²„?©ëœ APlayerCharacter ?€?…ë§Œ ?„í„°ë§?
 		for (const FOverlapResult& Overlap : OverlapResults)
 		{
 			APlayerCharacter* PlayerChar = Cast<APlayerCharacter>(Overlap.GetActor());
 			if (PlayerChar && PlayerChar != this)
 			{
-				// ?� 기능 구현???�른 ?��??�겟팅?�도�??�터�?추�?
+				// ?€ ê¸°ëŠ¥ êµ¬í˜„???¤ë¥¸ ?€ë§??€ê²ŸíŒ…?˜ë„ë¡??„í„°ë§?ì¶”ê?
 				// if (PlayerChar->GetTeam() != GetTeam()) 
 				// {
 				FoundTargets.Add(PlayerChar);
@@ -688,9 +713,9 @@ APlayerCharacter* APlayerCharacter::SelectBestTarget(const TArray<APlayerCharact
 		return nullptr;
 	}
 
-	// ?��??�택 기�?:
-	// 1. ?�선?�위: ???�야�??�에 ?�는 ??
-	// 2. 거리: 가??가까운 ??
+	// ?€ê²?? íƒ ê¸°ì?:
+	// 1. ?°ì„ ?œìœ„: ???œì•¼ê°??ˆì— ?ˆëŠ” ??
+	// 2. ê±°ë¦¬: ê°€??ê°€ê¹Œìš´ ??
 
 	APlayerCharacter* BestTarget = nullptr;
 	float BestScore = -1.0f;
@@ -698,8 +723,8 @@ APlayerCharacter* APlayerCharacter::SelectBestTarget(const TArray<APlayerCharact
 	FVector Forward = GetActorForwardVector();
 	FVector ActorLocation = GetActorLocation();
 
-	const float ViewAngleCos = FMath::Cos(FMath::DegreesToRadians(60.0f)); // 60???�야�?
-	const float ViewAngleWeight = 2.0f; // ?�야�????�에 가중치
+	const float ViewAngleCos = FMath::Cos(FMath::DegreesToRadians(60.0f)); // 60???œì•¼ê°?
+	const float ViewAngleWeight = 2.0f; // ?œì•¼ê°????ì— ê°€ì¤‘ì¹˜
 
 	for (APlayerCharacter* Target : PotentialTargets)
 	{
@@ -708,17 +733,17 @@ APlayerCharacter* APlayerCharacter::SelectBestTarget(const TArray<APlayerCharact
 		FVector ToTarget = Target->GetActorLocation() - ActorLocation;
 		float Distance = ToTarget.Size();
 
-		float DistanceScore = 1.0f / FMath::Max(Distance, 1.0f); // 거리??반비례?�는 ?�수 계산 (가까울?�록 ?�음)
+		float DistanceScore = 1.0f / FMath::Max(Distance, 1.0f); // ê±°ë¦¬??ë°˜ë¹„ë¡€?˜ëŠ” ?ìˆ˜ ê³„ì‚° (ê°€ê¹Œìš¸?˜ë¡ ?’ìŒ)
 
-		ToTarget.Normalize(); // 방향 ?�규??
+		ToTarget.Normalize(); // ë°©í–¥ ?•ê·œ??
 
-		float DotProduct = FVector::DotProduct(Forward, ToTarget); // ?�방 벡터?� ?��?방향 벡터???�적 계산
+		float DotProduct = FVector::DotProduct(Forward, ToTarget); // ?„ë°© ë²¡í„°?€ ?€ê²?ë°©í–¥ ë²¡í„°???´ì  ê³„ì‚°
 
-		float AngleScore = DotProduct > ViewAngleCos ? ViewAngleWeight : 1.0f; // ?�야�??�에 ?�는지 ?�인 (DotProduct > ViewAngleCos�??�야�??�에 ?�음)
+		float AngleScore = DotProduct > ViewAngleCos ? ViewAngleWeight : 1.0f; // ?œì•¼ê°??ˆì— ?ˆëŠ”ì§€ ?•ì¸ (DotProduct > ViewAngleCosë©??œì•¼ê°??ˆì— ?ˆìŒ)
 
-		float FinalScore = DistanceScore * AngleScore; // 최종 ?�수 계산
+		float FinalScore = DistanceScore * AngleScore; // ìµœì¢… ?ìˆ˜ ê³„ì‚°
 
-		// ??좋�? ?�수???�겟이�?갱신
+		// ??ì¢‹ì? ?ìˆ˜???€ê²Ÿì´ë©?ê°±ì‹ 
 		if (FinalScore > BestScore)
 		{
 			BestScore = FinalScore;
