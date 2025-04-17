@@ -16,13 +16,4 @@ class JOSEON12KNIGHTS_API AAIC_Enemy : public AAIController
 	
 public:
 	AAIC_Enemy();
-
-	virtual void OnPossess(APawn* InPawn) override;
-	virtual void OnUnPossess() override;
-
-private:
-	void RandomMove();
-
-private:
-	FTimerHandle TimerHandle;
 };
