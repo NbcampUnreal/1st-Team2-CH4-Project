@@ -10,9 +10,8 @@ APS_FighterPlayerState::APS_FighterPlayerState()
 
 void APS_FighterPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-    DOREPLIFETIME(APS_FighterPlayerState, bIsReady);
-    DOREPLIFETIME(APS_FighterPlayerState, SelectedCharacterID);
+	DOREPLIFETIME(APS_FighterPlayerState, bIsReady);
 }
 

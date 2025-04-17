@@ -18,9 +18,8 @@ void AGM_SingleMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	UE_LOG(LogTemp, Warning, TEXT("▶ BeginPlay: GM_SingleMode"));
+	UE_LOG(LogTemp, Warning, TEXT("BeginPlay: GM_SingleMode"));
 
-	// 📸 카메라 시점 설정
 	for (TActorIterator<ACameraActor> It(GetWorld()); It; ++It)
 	{
 		if (It->ActorHasTag(TEXT("SingleStartCamera")))
@@ -29,24 +28,22 @@ void AGM_SingleMode::BeginPlay()
 			if (PC)
 			{
 				PC->SetViewTargetWithBlend(*It, 1.0f);
-				UE_LOG(LogTemp, Warning, TEXT("📷 SetViewTarget → SingleStartCamera"));
+				UE_LOG(LogTemp, Warning, TEXT("SetViewTarget → SingleStartCamera"));
 			}
 			break;
 		}
 	}
 
-	// 🎮 캐릭터 스폰
 	if (UGI_GameCoreInstance* GI = GetGameInstance<UGI_GameCoreInstance>())
 	{
 		const TArray<FPlayerLobbyInfo>& Players = GI->PlayerLobbyInfos;
-		UE_LOG(LogTemp, Warning, TEXT("👥 PlayerLobbyInfos count: %d"), Players.Num());
+		UE_LOG(LogTemp, Warning, TEXT("PlayerLobbyInfos count: %d"), Players.Num());
 
 		int32 Index = 0;
 		for (const FPlayerLobbyInfo& Info : Players)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("➡ 캐릭터[%d] ID: %s"), Index, *Info.SelectedCharacterID);
+			UE_LOG(LogTemp, Warning, TEXT("캐릭터[%d] ID: %s"), Index, *Info.SelectedCharacterID);
 
-			// 1. PlayerStart 찾기
 			FString StartTag = (Index == 0) ? TEXT("PlayerStart") : FString::Printf(TEXT("PlayerStart%d"), Index + 1);
 			AActor* StartPoint = nullptr;
 
@@ -61,24 +58,23 @@ void AGM_SingleMode::BeginPlay()
 
 			if (!StartPoint)
 			{
-				UE_LOG(LogTemp, Error, TEXT("❌ PlayerStart with tag '%s' not found"), *StartTag);
+				UE_LOG(LogTemp, Error, TEXT("PlayerStart with tag '%s' not found"), *StartTag);
 				continue;
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("✅ Found PlayerStart tag: %s"), *StartTag);
+				UE_LOG(LogTemp, Warning, TEXT("Found PlayerStart tag: %s"), *StartTag);
 			}
 
-			// 2. 캐릭터 BP 매핑
 			TSubclassOf<APawn> CharacterClass = nullptr;
 			if (CharacterBPMap.Contains(Info.SelectedCharacterID))
 			{
 				CharacterClass = CharacterBPMap[Info.SelectedCharacterID];
-				UE_LOG(LogTemp, Warning, TEXT("✅ Character class found for ID: %s"), *Info.SelectedCharacterID);
+				UE_LOG(LogTemp, Warning, TEXT("Character class found for ID: %s"), *Info.SelectedCharacterID);
 			}
 			else
 			{
-				UE_LOG(LogTemp, Error, TEXT("❌ CharacterBPMap에 ID '%s' 없음"), *Info.SelectedCharacterID);
+				UE_LOG(LogTemp, Error, TEXT("CharacterBPMap에 ID '%s' 없음"), *Info.SelectedCharacterID);
 				continue;
 			}
 
@@ -89,12 +85,12 @@ void AGM_SingleMode::BeginPlay()
 
 			if (!SpawnedPawn)
 			{
-				UE_LOG(LogTemp, Error, TEXT("❌ Pawn spawn 실패: ID '%s'"), *Info.SelectedCharacterID);
+				UE_LOG(LogTemp, Error, TEXT(" Pawn spawn 실패: ID '%s'"), *Info.SelectedCharacterID);
 				continue;
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("✅ Pawn spawn 성공: %s"), *Info.SelectedCharacterID);
+				UE_LOG(LogTemp, Warning, TEXT("Pawn spawn 성공: %s"), *Info.SelectedCharacterID);
 			}
 
 			// 4. Possess or AI 설정
@@ -104,11 +100,11 @@ void AGM_SingleMode::BeginPlay()
 				if (PC)
 				{
 					PC->Possess(SpawnedPawn);
-					UE_LOG(LogTemp, Log, TEXT("🎮 Player 1 possessed 캐릭터: %s"), *Info.SelectedCharacterID);
+					UE_LOG(LogTemp, Log, TEXT("Player 1 possessed 캐릭터: %s"), *Info.SelectedCharacterID);
 				}
 				else
 				{
-					UE_LOG(LogTemp, Error, TEXT("❌ GetPlayerController 실패"));
+					UE_LOG(LogTemp, Error, TEXT("GetPlayerController 실패"));
 				}
 			}
 			else
@@ -121,6 +117,6 @@ void AGM_SingleMode::BeginPlay()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("❌ GameInstance 캐스팅 실패"));
+		UE_LOG(LogTemp, Error, TEXT("GameInstance 캐스팅 실패"));
 	}
 }

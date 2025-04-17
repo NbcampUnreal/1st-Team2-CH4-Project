@@ -55,6 +55,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UUserWidget> JoinMenuClass;
 
+
 private:
 	UPROPERTY()
 	APlayerController* OwningPC;

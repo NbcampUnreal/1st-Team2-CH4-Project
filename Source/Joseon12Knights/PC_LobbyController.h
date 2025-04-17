@@ -12,7 +12,7 @@ class JOSEON12KNIGHTS_API APC_LobbyController : public APlayerController
 protected:
     virtual void BeginPlay() override;
     virtual void SetupInputComponent() override;
-
+    virtual void Tick(float DeltaSeconds) override;
 
     void HandleEnterKey();      // Enter 키 입력 처리
     void SetLobbyCameraView();  // 고정 카메라로 시점 전환
@@ -22,6 +22,5 @@ public:
     void Server_PressReady();
 
     UFUNCTION(Server, Reliable)
-    void Server_AttemptStartMatch();  // 호스트 전용
-
+    void Server_AttemptStartMatch();
 };

@@ -1,4 +1,3 @@
-// GM_MatchMode.h
 #pragma once
 
 #include "CoreMinimal.h"
@@ -12,7 +11,12 @@ class JOSEON12KNIGHTS_API AGM_MatchMode : public AGameModeBase
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
 
-	void SpawnCharacters();
+public:
+	UPROPERTY(EditAnywhere, Category = "Characters")
+	TMap<FString, TSubclassOf<APawn>> CharacterBPMap;
 
+	UPROPERTY(EditAnywhere, Category = "Characters")
+	TMap<int32, APawn*> SpawnedCharacters;
 };

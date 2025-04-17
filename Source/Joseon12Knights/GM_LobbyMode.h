@@ -20,8 +20,7 @@ public:
     UFUNCTION(Server, Reliable)
     void Server_SetReady(APlayerController* PC);
 
-    UFUNCTION(BlueprintCallable)
-    void StartMatch();
+    void TryStartMatch();
 
 protected:
     UPROPERTY()
