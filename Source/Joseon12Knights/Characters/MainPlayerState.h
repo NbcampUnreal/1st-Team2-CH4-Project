@@ -4,26 +4,20 @@
 #include "GameFramework/PlayerState.h"
 #include "MainPlayerState.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class JOSEON12KNIGHTS_API AMainPlayerState : public APlayerState
 {
 	GENERATED_BODY()
-	
 
-private:
-	
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Status")
 	float MaxHealth;
+
 	UPROPERTY(BlueprintReadOnly, Category = "Status")
 	float CurrentHealth;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Status")
+	UPROPERTY(ReplicatedUsing = OnRep_Stock, BlueprintReadOnly, Category = "Status")
 	int32 Stock;
-
 
 public:
 	AMainPlayerState();
@@ -41,4 +35,9 @@ public:
 	int32 GetStock() const { return Stock; }
 
 	void SetStock(int32 NewStock) { Stock = NewStock; }
+
+	UFUNCTION()
+	void OnRep_Stock();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };

@@ -43,10 +43,13 @@ void UHUD_CharacterInformation::UpdateHUD()
 	if (StockBox)
 	{
 		int32 Stock = PS->GetStock();
-		FString StockStr = FString::Printf(TEXT("%d"), Stock);
-		StockBox->SetText(FText::FromString(StockStr));
-
+		if (Stock >= 0 && Stock <= 10) 
+		{
+			FString StockStr = FString::Printf(TEXT("%d"), Stock);
+			StockBox->SetText(FText::FromString(StockStr));
+		}
 	}
+
 
 
 	if (CharacterNameText)
