@@ -132,6 +132,11 @@ void APlayerCharacter::UpdateGauge(float FillAmount)
 
 }
 
+void APlayerCharacter::RechargeGuardGauge()
+{
+
+}
+
 void APlayerCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 
