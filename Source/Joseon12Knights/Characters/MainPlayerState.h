@@ -1,5 +1,3 @@
-
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -25,12 +23,16 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Status")
 	int32 Stock;
+
+
 public:
 	AMainPlayerState();
 
 	UFUNCTION(BlueprintCallable)
 	void Initialize();
 
+	float GetMaxHealth() const { return MaxHealth; }
+	float GetCurrentHealth() const { return CurrentHealth; }
 	float GetPlayerHealth() const;
 	void SetPlayerStatus(float Health);
 	void SetDamage(float Damage);

@@ -53,15 +53,24 @@ void AGM_SingleMode::BeginPlay()
 				continue;
 			}
 
+			FString CharacterID = Info.SelectedCharacterID;
 			TSubclassOf<APawn> CharacterClass = nullptr;
-			if (CharacterBPMap.Contains(Info.SelectedCharacterID))
+
+			if (Index == 0)
 			{
-				CharacterClass = CharacterBPMap[Info.SelectedCharacterID];
+				if (CharacterBPMap.Contains(CharacterID))
+				{
+					CharacterClass = CharacterBPMap[CharacterID];
+				}
 			}
 			else
 			{
-				continue;
+				if (CharacterBPMap_AI.Contains(CharacterID))
+				{
+					CharacterClass = CharacterBPMap_AI[CharacterID];
+				}
 			}
+
 
 			FVector Location = StartPoint->GetActorLocation();
 			FRotator Rotation = StartPoint->GetActorRotation();

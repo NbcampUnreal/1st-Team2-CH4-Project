@@ -20,7 +20,11 @@ public:
 	virtual bool CanRespawn(AActor* PlayerActor) const override;
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character")
+	UPROPERTY(EditAnywhere, Category = "Characters")
 	TMap<FString, TSubclassOf<APawn>> CharacterBPMap;
+
+	UPROPERTY(EditAnywhere, Category = "Characters")
+	TMap<FString, TSubclassOf<APawn>> CharacterBPMap_AI;
+
 
 };

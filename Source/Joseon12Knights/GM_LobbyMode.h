@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GM_BaseMode.h"
+#include "PC_LobbyController.h"
 #include "GM_LobbyMode.generated.h"
 
 class APlayerStart;

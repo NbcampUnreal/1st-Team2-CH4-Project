@@ -120,11 +120,21 @@ void AGM_LobbyMode::PostLogin(APlayerController* NewPlayer)
     if (UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance()))
     {
         GI->PlayerCharacterMap.Add(PlayerIndex, CharacterKey);
+
+        if (NewPlayer->IsLocalController())
+        {
+            GI->SelectedCharacterID = CharacterKey;  // 호스트용
+        }
+        else
+        {
+            if (APC_LobbyController* LobbyPC = Cast<APC_LobbyController>(NewPlayer))
+            {
+                LobbyPC->Client_SetSelectedCharacterID(CharacterKey);  // 🔥 게스트용
+            }
+        }
     }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("GameInstance 캐스팅 실패"));
-    }
+
+
 }
 
 

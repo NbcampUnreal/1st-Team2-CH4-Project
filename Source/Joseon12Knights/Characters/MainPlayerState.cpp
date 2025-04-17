@@ -22,10 +22,10 @@ void AMainPlayerState::SetPlayerStatus(float Health)
 {
 	MaxHealth = Health;
 	CurrentHealth = MaxHealth;
-	UE_LOG(LogTemp, Warning, TEXT("Set Player Health : %f"), MaxHealth);
 }
 
 void AMainPlayerState::SetDamage(float Damage)
 {
 	CurrentHealth -= Damage;
 }
+

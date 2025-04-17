@@ -77,3 +77,12 @@ void APC_LobbyController::SetLobbyCameraView()
         }
     }
 }
+
+void APC_LobbyController::Client_SetSelectedCharacterID_Implementation(const FString& InCharacterID)
+{
+    UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(UGameplayStatics::GetGameInstance(this));
+    if (GI)
+    {
+        GI->SelectedCharacterID = InCharacterID;
+    }
+}

@@ -23,4 +23,7 @@ public:
 
     UFUNCTION(Server, Reliable)
     void Server_AttemptStartMatch();
+
+    UFUNCTION(Client, Reliable)
+    void Client_SetSelectedCharacterID(const FString& InCharacterID);
 };
