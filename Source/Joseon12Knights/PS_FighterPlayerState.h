@@ -15,6 +15,11 @@ public:
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	bool bIsReady = false;
 
+	UPROPERTY(Replicated)
+	int32 LobbyPlayerIndex = -1;
+
+
+
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
