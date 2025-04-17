@@ -10,8 +10,17 @@ class JOSEON12KNIGHTS_API ATigerKnight : public APlayerCharacter
 	GENERATED_BODY()
 
 protected:
-	void Skill(const FInputActionValue& Value) override;
-	void Ultimate(const FInputActionValue& Value) override;
+	virtual void Skill(const FInputActionValue& Value) override;
+
+	virtual void ServerSkill_Implementation() override;
+
+	virtual void MulticastSkill_Implementation() override;
+
+	virtual void Ultimate(const FInputActionValue& Value) override;
+
+	virtual void ServerUltimate_Implementation() override;
+
+	virtual void MulticastUltimate_Implementation() override;
 
 	// W 스킬 에셋
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TigerKnight Skill")

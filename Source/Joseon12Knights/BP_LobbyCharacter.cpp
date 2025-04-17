@@ -73,7 +73,7 @@ void ABP_LobbyCharacter::SetCharacter(const FString& InCharacterID)
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("❌ Character mesh for ID %s not found"), *InCharacterID);
+        UE_LOG(LogTemp, Error, TEXT("Character mesh for ID %s not found"), *InCharacterID);
     }
 }
 

@@ -31,9 +31,19 @@ void ARatKnight::BeginPlay()
 // ====================
 void ARatKnight::Skill(const FInputActionValue& Value)
 {
+	ServerSkill();
+}
+
+void ARatKnight::ServerSkill_Implementation()
+{
+	MulticastSkill();
+}
+
+void ARatKnight::MulticastSkill_Implementation()
+{
 	// 쥐기사 W 스킬: 『쥐구멍』
-	// 1) 공격형 디버프 : 타겟에게 슬로우 효과 적용 (타겟 이동속도 70%로 2초)
-	// 2) 은신 효과 : 쥐기사 본인에게 은신 효과 적용
+// 1) 공격형 디버프 : 타겟에게 슬로우 효과 적용 (타겟 이동속도 70%로 2초)
+// 2) 은신 효과 : 쥐기사 본인에게 은신 효과 적용
 
 	if (!bCanUseSkill)
 	{
@@ -53,7 +63,7 @@ void ARatKnight::Skill(const FInputActionValue& Value)
 	APlayerCharacter* Target = GetTargetPlayer();
 	if (Target)
 	{
-		if (UBuffComponent* TargetBuffComp = Target -> FindComponentByClass<UBuffComponent>()) // 타겟에게 디버프 적용...!
+		if (UBuffComponent* TargetBuffComp = Target->FindComponentByClass<UBuffComponent>()) // 타겟에게 디버프 적용...!
 		{
 			FBuffInfo SlowDebuff;
 			SlowDebuff.BuffType = EBuffType::Slow;
@@ -83,7 +93,7 @@ void ARatKnight::Skill(const FInputActionValue& Value)
 		GetWorldTimerManager().ClearTimer(StealthTimerHandle);
 		GetWorldTimerManager().SetTimer(StealthTimerHandle, this, &ARatKnight::EndStealth, StealthBuff.Duration, false);
 
-		UE_LOG(LogTemp, Warning, TEXT("쥐구멍 은신 효과 적용! (지속시간: %f초)"),StealthDuration);
+		UE_LOG(LogTemp, Warning, TEXT("쥐구멍 은신 효과 적용! (지속시간: %f초)"), StealthDuration);
 	}
 
 	// Skill Effect & Sound
@@ -266,8 +276,18 @@ void ARatKnight::EndStealth()
 // ====================
 void ARatKnight::Ultimate(const FInputActionValue& Value)
 {
+	ServerUltimate();
+}
+
+void ARatKnight::ServerUltimate_Implementation()
+{
+	MulticastUltimate();
+}
+
+void ARatKnight::MulticastUltimate_Implementation()
+{
 	// 쥐기사 R 궁극기: 『1등 난타』
-	// 공격형 디버프 : 타겟에게 독 효과 적용 (초당 5% 도트, 4초)
+// 공격형 디버프 : 타겟에게 독 효과 적용 (초당 5% 도트, 4초)
 	if (!bCanUseUltimate)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("RatKnight 궁극기 쿨타임 중..."));
@@ -290,9 +310,9 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 
 	// 타격한 상대에게 독 디버프 적용 (초당 공격력 5% 추가 피해, 4초 지속)
 	APlayerCharacter* Target = GetTargetPlayer();
-	if (Target) 
+	if (Target)
 	{
-		if (UBuffComponent* TargetBuffComp = Target -> FindComponentByClass<UBuffComponent>()) // 타겟에게 디버프 적용
+		if (UBuffComponent* TargetBuffComp = Target->FindComponentByClass<UBuffComponent>()) // 타겟에게 디버프 적용
 		{
 			FBuffInfo PoisonDebuff;
 			PoisonDebuff.BuffType = EBuffType::Poison;
@@ -343,7 +363,7 @@ void ARatKnight::Ultimate(const FInputActionValue& Value)
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("1등 난타!!!!!"));
-	
+
 	// Cooldown Start
 	bCanUseUltimate = false;
 	GetWorldTimerManager().SetTimer(UltimateCooldownTimerHandle, [this]()

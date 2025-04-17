@@ -10,13 +10,16 @@
 #include "Kismet/GameplayStatics.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
+#include "MainPlayerState.h"
+#include "Components/WidgetComponent.h"
+#include "Components/ProgressBar.h" 
 
 
 // Sets default values
 APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMontage(nullptr)
 {
 	PrimaryActorTick.bCanEverTick = true;
-
+	bIsAlive = true;
 	TMap<FString, FString> MapAnimNamePath;
 	MapAnimNamePath.Add("Hit", "/Game/ModularAnimalKnightsPolyart/Animations/AM_GetHitAnim.AM_GetHitAnim");
 	MapAnimNamePath.Add("Death", "/Game/ModularAnimalKnightsPolyart/Animations/AM_Die.AM_Die");
@@ -86,8 +89,46 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 	bUseControllerRotationYaw = false;
+
+	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
+	OverheadWidget->SetupAttachment(GetMesh());
+	OverheadWidget->SetWidgetSpace(EWidgetSpace::Screen);
 }
 
+void APlayerCharacter::Respawn()
+{
+	InitializeData();
+}
+
+void APlayerCharacter::InitializeData()
+{
+	MaxHealth = StatComponent->GetMaxHP();
+	bIsAlive = true;
+	
+	AMainPlayerState* PS = GetPlayerState<AMainPlayerState>();
+	if (PS)
+	{
+		PS->SetPlayerStatus(MaxHealth);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Fail"));
+	}
+}
+
+
+void APlayerCharacter::UpdateGauge(float FillAmount)
+{
+	if (!OverheadWidget) return;
+	UUserWidget* Gauge = OverheadWidget->GetUserWidgetObject();
+
+	if (!Gauge) return;
+	if (UProgressBar* PB = Cast<UProgressBar>(Gauge->GetWidgetFromName(TEXT("ProgressBar_257"))))
+	{
+		PB->SetPercent(FillAmount);
+	}
+
+}
 
 void APlayerCharacter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -100,17 +141,16 @@ void APlayerCharacter::OnWeaponOverlap(UPrimitiveComponent* OverlappedComp, AAct
 
 	if (APlayerCharacter* EnemyCharacter = Cast<APlayerCharacter>(OtherActor))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Overlap Weapon"));
-
-		UGameplayStatics::ApplyDamage(EnemyCharacter, 50.f, GetController(), this, UDamageType::StaticClass());
+		EndAttack();
+		UGameplayStatics::ApplyDamage(EnemyCharacter, AttackDamage, GetController(), this, UDamageType::StaticClass());
 	}
 }
 
 float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
-	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-
+	//if (!IsLocallyControlled()) return 0.0f;
 	if (bIsHit) return 0.0f;
+	
 	float KnockBackDistance = bIsGuarding ? 500.f : 1000.f;
 
 	FVector Direction = DamageCauser->GetActorLocation() - GetActorLocation();
@@ -119,24 +159,46 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
-	FString AnimKey = bIsGuarding ? TEXT("GuardHit") : TEXT("Hit");
+	CurrentHealth -= DamageAmount;
+	
+	UE_LOG(LogTemp, Warning, TEXT("Hit ! Current Health : %f"), CurrentHealth);
 
-	UAnimMontage* AM = MapAnim[AnimKey];
-
-	if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
+	if (CurrentHealth <= 0)
 	{
-		AnimInstance->StopAllMontages(1);
-		AnimInstance->Montage_Play(AM);
+		CurrentHealth = 0;
+		Dead();
+	}
+	else
+	{
+		FString AnimKey = bIsGuarding ? TEXT("GuardHit") : TEXT("Hit");
+		AMainPlayerState* PS = GetPlayerState<AMainPlayerState>();
+		if (PS)
+		{
+			PS->SetDamage(DamageAmount);
+		}
+
+		UAnimMontage* AM = MapAnim[AnimKey];
+
+		if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
+		{
+			AnimInstance->StopAllMontages(1);
+			AnimInstance->Montage_Play(AM);
+		}
 	}
 
-	return 0.0f;
+	return DamageAmount;
 }
 
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnCapsuleOverlap);
 	WeaponComponent->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnWeaponOverlap);
+
+	AttackDamage = StatComponent->GetAttack();
+	MaxHealth = StatComponent->GetMaxHP();
+	CurrentHealth = MaxHealth;
 }
 
 void APlayerCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -150,6 +212,13 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	UpdateMovementSpeed();
+
+	if (GetWorld()->GetTimerManager().IsTimerActive(Timer))
+	{
+		RemainTime = GetWorld()->GetTimerManager().GetTimerRemaining(Timer);
+		UpdateGauge(RemainTime / 2);
+		//UE_LOG(LogTemp, Warning, TEXT("%f"), RemainTime / 2);
+	}
 }
 
 void APlayerCharacter::UpdateMovementSpeed() // ë§??„ë ˆ?„ë§ˆ???¸ì¶œ?˜ì–´ ?´ë™ ?ë„ë¥??…ë°?´íŠ¸.
@@ -163,7 +232,7 @@ void APlayerCharacter::UpdateMovementSpeed() // ë§??„ë ˆ?„ë§ˆ???¸ì¶œ?˜ì–´ ?´ë™ 
 
 void APlayerCharacter::Test(UAnimMontage* Montage, bool bInterrupted)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Hit End"));
+
 }
 
 
@@ -258,16 +327,45 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	}
 }
 
+void APlayerCharacter::TestTimer()
+{
+	if (GetWorld()->GetTimerManager().IsTimerActive(Timer))
+	{
+		return;
+	}
+	else
+	{
+		GetWorldTimerManager().SetTimer(
+			Timer,
+			FTimerDelegate::CreateLambda([this]()
+				{
+					UE_LOG(LogTemp, Warning, TEXT("Test Timer!!"));
+
+				}),
+			2.0f,
+			false
+		);
+	}
+
+
+}
+
+
+bool APlayerCharacter::IsAlive() const
+{
+	return bIsAlive;
+}
 
 void APlayerCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
+	JumpCurrentCount = 0;
 	bIsDoubleJump = false;
 }
 
 void APlayerCharacter::Move(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
+	if (bIsHit || !bIsAlive) return;
 	float AxisValue = Value.Get<float>();
 	FVector Movement = FVector(AxisValue * MoveSpeed, 0.f, 0.f);
 	AddMovementInput(Movement.GetSafeNormal(), 1.f);
@@ -291,7 +389,6 @@ void APlayerCharacter::MulticastSetDirection_Implementation(const FRotator& Rota
 {
 	if (!IsLocallyControlled())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Back"));
 		FRotator NormalRotation = Rotation.GetNormalized();
 		SetActorRotation(NormalRotation);
 	}
@@ -299,7 +396,7 @@ void APlayerCharacter::MulticastSetDirection_Implementation(const FRotator& Rota
 
 void APlayerCharacter::StartJump(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
+	if (bIsHit || !bIsAlive) return;
 	ServerStartJump();
 }
 
@@ -318,7 +415,7 @@ void APlayerCharacter::MulticastStartJump_Implementation()
 	Jump();
 
 
-	if (JumpSound)
+	if (JumpSound && JumpCurrentCount < 3)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, JumpSound, GetActorLocation());
 	}
@@ -334,7 +431,7 @@ void APlayerCharacter::StopJump(const FInputActionValue& Value)
 
 void APlayerCharacter::Dash(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
+	if (bIsHit || !bIsAlive) return;
 	ServerDash();
 }
 
@@ -365,10 +462,10 @@ void APlayerCharacter::MulticastDash_Implementation()
 
 void APlayerCharacter::Guard(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
+	if (bIsHit || !bIsAlive) return;
 	bool bIsGuard = Value.Get<bool>();
 
-	UE_LOG(LogTemp, Warning, TEXT("GUARD %d "), bIsGuard);
+	TestTimer();
 
 	// »ç¿îµå Àç»ý
 	if (!bIsGuarding && bIsGuard && GuardSound)
@@ -391,12 +488,9 @@ void APlayerCharacter::Guard(const FInputActionValue& Value)
 
 void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
+	if (bIsHit || !bIsAlive) return;
 	bool bIsGuard = Value.Get<bool>();
 	bIsGuarding = false;
-
-	UE_LOG(LogTemp, Warning, TEXT("Release GUARD %d "), bIsGuard);
-
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
 	UAnimMontage* AM = MapAnim["Guard"];
@@ -409,7 +503,7 @@ void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 
 void APlayerCharacter::NormalAttack(const FInputActionValue& Value)
 {
-	if (bIsHit) return;
+	if (bIsHit || !bIsAlive) return;
 	ServerAttack();
 }
 
@@ -451,16 +545,7 @@ void APlayerCharacter::ServerDead_Implementation()
 
 void APlayerCharacter::MulticastDead_Implementation()
 {
-	if (bIsHit) return;
-
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-
-	UAnimMontage* AM = MapAnim["Death"];
-
-	if (AnimInstance && AM && !AnimInstance->Montage_IsPlaying(AM))
-	{
-		AnimInstance->Montage_Stop(0.1f, AM);
-	}
+	bIsAlive = false;
 }
 
 void APlayerCharacter::BeginAttack()
@@ -493,9 +578,34 @@ float APlayerCharacter::CalculateDamage(float BaseDamage, APlayerCharacter* Atta
 	return BaseDamage * AttackerMultiplier / DefenderMultiplier;
 }
 
+void APlayerCharacter::Skill(const FInputActionValue& Value)
+{
+}
+
+void APlayerCharacter::Ultimate(const FInputActionValue& Value)
+{
+}
+
+void APlayerCharacter::ServerSkill_Implementation()
+{
+}
+
+void APlayerCharacter::MulticastSkill_Implementation()
+{
+}
+
+void APlayerCharacter::ServerUltimate_Implementation()
+{
+}
+
+void APlayerCharacter::MulticastUltimate_Implementation()
+{
+}
+
+
 void APlayerCharacter::SetHitState(bool IsHit)
 {
-	this->bIsHit = IsHit;
+	bIsHit = IsHit;
 }
 
 // =============

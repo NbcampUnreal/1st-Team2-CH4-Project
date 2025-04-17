@@ -12,7 +12,7 @@ void UHUD_CharacterSelectPanel::SetCharacter(const FString& CharacterID, const F
 
     if (!CharacterImage)
     {
-        UE_LOG(LogTemp, Error, TEXT("❌ CharacterImage is null"));
+        UE_LOG(LogTemp, Error, TEXT("CharacterImage is null"));
         return;
     }
 
@@ -29,11 +29,11 @@ void UHUD_CharacterSelectPanel::SetCharacter(const FString& CharacterID, const F
         }
         else
         {
-            UE_LOG(LogTemp, Error, TEXT("❌ FoundTexture is null for CharacterID: %s"), *CharacterID);
+            UE_LOG(LogTemp, Error, TEXT("FoundTexture is null for CharacterID: %s"), *CharacterID);
         }
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("❌ CharacterIconMap missing CharacterID: %s"), *CharacterID);
+        UE_LOG(LogTemp, Error, TEXT("CharacterIconMap missing CharacterID: %s"), *CharacterID);
     }
 }

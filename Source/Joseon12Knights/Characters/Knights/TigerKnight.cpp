@@ -9,6 +9,16 @@
 // ====================
 void ATigerKnight::Skill(const FInputActionValue& Value)
 {
+	ServerSkill();
+}
+
+void ATigerKnight::ServerSkill_Implementation()
+{
+	MulticastSkill();
+}
+
+void ATigerKnight::MulticastSkill_Implementation()
+{
 	if (!bCanUseSkill)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TigerKnight W is	CoolDown.."));
@@ -45,7 +55,7 @@ void ATigerKnight::Skill(const FInputActionValue& Value)
 	}
 
 	// 쿨다운 시작
-	bCanUseSkill = false;  
+	bCanUseSkill = false;
 	GetWorldTimerManager().SetTimer(SkillCooldownTimerHandle, [this]()
 		{
 			bCanUseSkill = true;
@@ -73,6 +83,16 @@ void ATigerKnight::Skill(const FInputActionValue& Value)
 // ====================
 void ATigerKnight::Ultimate(const FInputActionValue& Value)
 {
+	ServerUltimate();
+}
+
+void ATigerKnight::ServerUltimate_Implementation()
+{
+	MulticastUltimate();
+}
+
+void ATigerKnight::MulticastUltimate_Implementation()
+{
 	if (!bCanUseUltimate)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("TigerKnight Ultimate is CoolDown..."));
@@ -89,9 +109,9 @@ void ATigerKnight::Ultimate(const FInputActionValue& Value)
 
 	// 타격한 상대에게 출혈 효과 적용 (강력한 베기 공격, 도트 데미지 & 적 방어력 저하 4초 지속)
 	APlayerCharacter* Target = GetTargetPlayer();
-	if (Target) 
+	if (Target)
 	{
-		if (UBuffComponent* TargetBuffComp = Target -> FindComponentByClass<UBuffComponent>())
+		if (UBuffComponent* TargetBuffComp = Target->FindComponentByClass<UBuffComponent>())
 		{
 			FBuffInfo BleedDebuff;
 			BleedDebuff.BuffType = EBuffType::Bleed;
@@ -99,7 +119,7 @@ void ATigerKnight::Ultimate(const FInputActionValue& Value)
 			BleedDebuff.DamageOverTimePercent = 0.1f; // 방어력 저하를 어떻게 할까? 1)AI 방어력 내리기 ? 2)캐락터 공격력 늘리기?
 			BleedDebuff.DefenseMultiplier = 0.8f;
 			TargetBuffComp->AddBuff(BleedDebuff);
-			
+
 			// 출혈 데미지는 스킬 사용자의 공격력에 기반하므로, 공격자(=this)의 StatComponent에서 값을 가져와 저장
 			if (this->GetStatComponent())
 			{

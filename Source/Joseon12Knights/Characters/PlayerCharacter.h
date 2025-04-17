@@ -15,6 +15,7 @@
 struct FInputActionValue;
 class UCameraComponent;
 class USpringArmComponent;
+class UWidgetComponent;
 
 UCLASS(Abstract, NotBlueprintable)
 class JOSEON12KNIGHTS_API APlayerCharacter : public ACharacter
@@ -24,7 +25,25 @@ class JOSEON12KNIGHTS_API APlayerCharacter : public ACharacter
 public:
 	APlayerCharacter();
 
+	UFUNCTION(BlueprintCallable)
+	void Respawn();
+
+	UFUNCTION(BlueprintCallable)
+	void InitializeData();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	UWidgetComponent* OverheadWidget;
+
 protected:
+	bool bIsAlive;
+	float AttackDamage;
+	float CurrentHealth;
+	float MaxHealth;
+	
+	FTimerHandle Timer;
+
+	UFUNCTION()
+	void UpdateGauge(float FillAmount);
 
 	UFUNCTION()
 	void OnCapsuleOverlap(
@@ -56,8 +75,6 @@ protected:
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-
-
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float MoveSpeed;
@@ -104,6 +121,14 @@ protected:
 public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	UFUNCTION()
+	void TestTimer();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Temp")
+	float RemainTime;
+
+	UFUNCTION(BlueprintCallable)
+	bool IsAlive() const;
 
 	UFUNCTION()
 	void Landed(const FHitResult& Hit);
@@ -169,9 +194,23 @@ public:
 	float CalculateDamage(float BaseDamage, APlayerCharacter* Attacker);
 
 	UFUNCTION()
-	virtual void Skill(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Skill, );
+	virtual void Skill(const FInputActionValue& Value);
+
+	UFUNCTION(Server, Reliable)
+	virtual void ServerSkill();
+
+	UFUNCTION(NetMulticast, Reliable)
+	virtual void MulticastSkill();
+
 	UFUNCTION()
-	virtual void Ultimate(const FInputActionValue& Value) PURE_VIRTUAL(APlayerCharacter::Ultimate, );
+	virtual void Ultimate(const FInputActionValue& Value);
+
+	UFUNCTION(Server, Reliable)
+	virtual void ServerUltimate();
+
+	UFUNCTION(NetMulticast, Reliable)
+	virtual void MulticastUltimate();
+
 protected:
 	bool bIsGuarding;
 	bool bIsHit;

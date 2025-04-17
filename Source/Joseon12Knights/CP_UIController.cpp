@@ -73,3 +73,4 @@ void UCP_UIController::ShowUI(EUIScreen TargetScreen)
 	OwningPC->SetInputMode(InputMode);
 	OwningPC->bShowMouseCursor = true;
 }
+
