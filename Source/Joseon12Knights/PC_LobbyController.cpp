@@ -59,27 +59,27 @@ void APC_LobbyController::SetupInputComponent()
 
 void APC_LobbyController::HandleEnterKey()
 {
-    UE_LOG(LogTemp, Warning, TEXT("▶ Enter 키 눌림"));
+    UE_LOG(LogTemp, Warning, TEXT("Enter 키 눌림"));
 
     if (IsLocalController())
     {
-        UE_LOG(LogTemp, Warning, TEXT("▶ 로컬 컨트롤러 확인됨"));
+        UE_LOG(LogTemp, Warning, TEXT("로컬 컨트롤러 확인됨"));
 
         if (LobbyHUD)
         {
             if (APS_FighterPlayerState* PS = GetPlayerState<APS_FighterPlayerState>())
             {
-                UE_LOG(LogTemp, Warning, TEXT("▶ PlayerIndex: %d"), PS->LobbyPlayerIndex);
+                UE_LOG(LogTemp, Warning, TEXT("PlayerIndex: %d"), PS->LobbyPlayerIndex);
                 LobbyHUD->ShowReadyForPlayer(PS->LobbyPlayerIndex);
             }
             else
             {
-                UE_LOG(LogTemp, Error, TEXT("❌ FighterPlayerState 없음"));
+                UE_LOG(LogTemp, Error, TEXT("FighterPlayerState 없음"));
             }
         }
         else
         {
-            UE_LOG(LogTemp, Error, TEXT("❌ LobbyHUD null 상태"));
+            UE_LOG(LogTemp, Error, TEXT("LobbyHUD null 상태"));
         }
     }
 
