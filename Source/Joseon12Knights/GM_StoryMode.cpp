@@ -7,11 +7,13 @@
 #include "MainPlayerState.h"
 #include "MainPlayerController.h"
 #include "PlayerCharacter.h"
+#include "Camera/CameraActor.h"
 
 AGM_StoryMode::AGM_StoryMode()
 {
 	DefaultPawnClass = nullptr;
 	PlayerControllerClass = AMainPlayerController::StaticClass();
+	PrimaryActorTick.bCanEverTick = true;
 }
 
 void AGM_StoryMode::BeginPlay()
@@ -25,10 +27,23 @@ void AGM_StoryMode::BeginPlay()
 		return;
 	}
 
+	// 카메라 설정 (선택)
+	for (TActorIterator<ACameraActor> It(GetWorld()); It; ++It)
+	{
+		if (It->ActorHasTag(TEXT("SingleStartCamera")))
+		{
+			if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+			{
+				PC->SetViewTargetWithBlend(*It, 1.0f);
+			}
+			break;
+		}
+	}
+
 	if (UGI_GameCoreInstance* GI = GetGameInstance<UGI_GameCoreInstance>())
 	{
 		FString PlayerCharID = GI->SelectedCharacterID;
-		FString AICharID = TEXT("1"); // AI는 고정 or 이후 랜덤도 가능
+		FString AICharID = TEXT("1");
 
 		TSubclassOf<APawn> PlayerClass = CharacterBPMap.Contains(PlayerCharID) ? CharacterBPMap[PlayerCharID] : nullptr;
 		TSubclassOf<APawn> AIClass = CharacterBPMap_AI.Contains(AICharID) ? CharacterBPMap_AI[AICharID] : nullptr;
@@ -82,11 +97,46 @@ void AGM_StoryMode::BeginPlay()
 		{
 			AIPawn->AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
-			if (AMainPlayerState* PS = Cast<AMainPlayerState>(AIPawn->GetPlayerState()))
+			AMainPlayerState* AIState = GetWorld()->SpawnActor<AMainPlayerState>(AMainPlayerState::StaticClass());
+			if (AIState)
 			{
-				PS->SetPlayerIndex(1);
+				AIPawn->SetPlayerState(AIState);
+				AIState->SetPlayerIndex(1);
 			}
 		}
+
+		// 총 AI 수 설정
+		TotalAI = 1;
+		bGameEnded = false;
+	}
+}
+
+void AGM_StoryMode::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (bGameEnded || TotalAI <= 0) return;
+
+	int32 AliveAI = 0;
+
+	for (TActorIterator<APlayerCharacter> It(GetWorld()); It; ++It)
+	{
+		APlayerCharacter* AI = *It;
+		if (!AI) continue;
+
+		AMainPlayerState* PS = Cast<AMainPlayerState>(AI->GetPlayerState());
+		if (!PS) continue;
+
+		if (PS->GetPlayerIndex() != 0 && AI->IsAlive())
+		{
+			AliveAI++;
+		}
+	}
+
+	if (AliveAI == 0)
+	{
+		TriggerStoryGameEnd(true);
+		bGameEnded = true;
 	}
 }
 
@@ -113,7 +163,6 @@ void AGM_StoryMode::HandlePlayerRespawn(AActor* PlayerActor)
 			return;
 		}
 
-		// 리스폰
 		AActor* StartPoint = nullptr;
 		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
 		{
@@ -125,35 +174,20 @@ void AGM_StoryMode::HandlePlayerRespawn(AActor* PlayerActor)
 		}
 		if (!StartPoint) return;
 
-		if (UGI_GameCoreInstance* GI = GetGameInstance<UGI_GameCoreInstance>())
-		{
-			TSubclassOf<APawn> PlayerClass = CharacterBPMap[GI->SelectedCharacterID];
-			APawn* NewPawn = GetWorld()->SpawnActor<APawn>(PlayerClass, StartPoint->GetActorLocation(), StartPoint->GetActorRotation());
+		FVector Location = StartPoint->GetActorLocation();
 
-			if (NewPawn)
+		GetWorld()->GetTimerManager().SetTimerForNextTick([Pawn, Location]() {
+			Pawn->SetActorLocation(Location);
+			if (APlayerCharacter* Player = Cast<APlayerCharacter>(Pawn))
 			{
-				if (APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0))
-				{
-					PlayerController->Possess(NewPawn);
-				}
-
-				if (APlayerCharacter* PCChar = Cast<APlayerCharacter>(NewPawn))
-				{
-					PCChar->Respawn();
-				}
+				Player->Respawn();
 			}
-
-		}
+		});
 	}
 	else
 	{
-		// AI 사망 → 승리
 		Pawn->Destroy();
 		DeadAI++;
-		if (DeadAI >= TotalAI)
-		{
-			TriggerStoryGameEnd(true);
-		}
 	}
 }
 
@@ -173,7 +207,7 @@ bool AGM_StoryMode::CanRespawn(AActor* PlayerActor) const
 
 void AGM_StoryMode::TriggerStoryGameEnd(bool bPlayerWin)
 {
-	FString WinnerChar = TEXT("스토리캐릭터");
+	FString WinnerChar = TEXT("연대기 종료");
 
 	for (APlayerState* PS : GameState->PlayerArray)
 	{
