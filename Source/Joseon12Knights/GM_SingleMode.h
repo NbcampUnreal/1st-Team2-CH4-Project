@@ -13,19 +13,29 @@ public:
 	AGM_SingleMode();
 
 	virtual void BeginPlay() override;
-	virtual void HandlePlayerRespawn(AActor* PlayerActor) override;
-	virtual bool CanRespawn(AActor* PlayerActor) const override;
+	virtual void Tick(float DeltaSeconds) override;
 
-protected:
+	// 리스폰 처리
+	void HandlePlayerRespawn(AActor* PlayerActor);
+	bool CanRespawn(AActor* PlayerActor) const;
+
+	// 게임 종료
 	void TriggerSingleGameEnd(bool bPlayerWin);
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character")
+private:
+	void SpawnCharacterAtTag(const FString& Tag, const FString& CharID, bool bIsPlayer, int32 Index);
+
+private:
+	bool bGameStarted = false;
+	bool bGameEnded = false;
+
+	UPROPERTY(EditAnywhere, Category = "Characters")
 	TMap<FString, TSubclassOf<APawn>> CharacterBPMap;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character")
+	UPROPERTY(EditAnywhere, Category = "Characters")
 	TMap<FString, TSubclassOf<APawn>> CharacterBPMap_AI;
 
-	// AI 개수 추적용
+
 	int32 TotalAI = 0;
 	int32 DeadAI = 0;
 };
