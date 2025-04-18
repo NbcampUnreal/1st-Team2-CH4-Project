@@ -12,13 +12,17 @@ AGM_SingleMode::AGM_SingleMode()
 {
 	DefaultPawnClass = nullptr;
 	PlayerControllerClass = AMainPlayerController::StaticClass();
+	PrimaryActorTick.bCanEverTick = true;
 }
 
 void AGM_SingleMode::BeginPlay()
 {
 	Super::BeginPlay();
+	bGameStarted = false;
 
-	// 시작 카메라 설정
+	UE_LOG(LogTemp, Warning, TEXT("🎮 BeginPlay: SingleMode 시작"));
+
+	// 카메라 설정
 	for (TActorIterator<ACameraActor> It(GetWorld()); It; ++It)
 	{
 		if (It->ActorHasTag(TEXT("SingleStartCamera")))
@@ -33,72 +37,118 @@ void AGM_SingleMode::BeginPlay()
 
 	if (UGI_GameCoreInstance* GI = GetGameInstance<UGI_GameCoreInstance>())
 	{
-		const TArray<FPlayerLobbyInfo>& Players = GI->PlayerLobbyInfos;
-		int32 Index = 0;
+		// Player
+		FString PlayerCharID = GI->SelectedCharacterID;
+		SpawnCharacterAtTag(TEXT("PlayerStart"), PlayerCharID, true, 0);
 
-		for (const FPlayerLobbyInfo& Info : Players)
+		// AI
+		const TArray<FString>& CpuIDs = GI->CpuCharacterIDs;
+		TotalAI = CpuIDs.Num();
+
+		for (int32 i = 0; i < CpuIDs.Num(); ++i)
 		{
-			FString StartTag = (Index == 0) ? TEXT("PlayerStart") : FString::Printf(TEXT("PlayerStart%d"), Index + 1);
-			AActor* StartPoint = nullptr;
+			FString StartTag = FString::Printf(TEXT("PlayerStart%d"), i + 2);
+			SpawnCharacterAtTag(StartTag, CpuIDs[i], false, i + 1);
+		}
+	}
 
-			for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
-			{
-				if (It->ActorHasTag(FName(*StartTag)))
-				{
-					StartPoint = *It;
-					break;
-				}
-			}
-			if (!StartPoint) continue;
+	bGameStarted = true;
+}
 
-			FString CharacterID = Info.SelectedCharacterID;
-			TSubclassOf<APawn> CharacterClass = (Index == 0)
-				? CharacterBPMap[CharacterID]
-				: CharacterBPMap_AI[CharacterID];
+void AGM_SingleMode::SpawnCharacterAtTag(const FString& Tag, const FString& CharID, bool bIsPlayer, int32 Index)
+{
+	AActor* StartPoint = nullptr;
 
-				if (!CharacterClass)
-				{
-					UE_LOG(LogTemp, Warning, TEXT("❌ CharacterClass 없음: Index=%d, ID=%s"), Index, *CharacterID);
-					continue;
-				}
+	for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+	{
+		if (It->ActorHasTag(FName(*Tag)))
+		{
+			StartPoint = *It;
+			break;
+		}
+	}
+	if (!StartPoint)
+	{
+		return;
+	}
 
-				FVector Location = StartPoint->GetActorLocation();
-				FRotator Rotation = StartPoint->GetActorRotation();
+	TSubclassOf<APawn> CharClass = bIsPlayer ? CharacterBPMap[CharID] : CharacterBPMap_AI[CharID];
+	if (!CharClass)
+	{
+		return;
+	}
 
-				APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(CharacterClass, Location, Rotation);
-				if (!SpawnedPawn) continue;
+	APawn* Spawned = GetWorld()->SpawnActor<APawn>(CharClass, StartPoint->GetActorLocation(), StartPoint->GetActorRotation());
+	if (!Spawned)
+	{
+		return;
+	}
 
-				if (Index == 0)
-				{
-					// 플레이어 조작
-					if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
-					{
-						PC->Possess(SpawnedPawn);
-					}
-				}
-				else
-				{
-					// AI 조작
-					SpawnedPawn->AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-					++TotalAI;
-				}
+	if (bIsPlayer)
+	{
+		if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+		{
+			PC->Possess(Spawned);
+		}
+	}
+	else
+	{
+		Spawned->AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
-				if (AMainPlayerState* PS = Cast<AMainPlayerState>(SpawnedPawn->GetPlayerState()))
-				{
-					PS->SetPlayerIndex(Index);
-					if (Index == 0)
-					{
-						PS->SetStock(3); // 플레이어만 스톡 설정
-					}
-				}
+		APlayerState* NewPS = GetWorld()->SpawnActor<AMainPlayerState>(AMainPlayerState::StaticClass());
+		if (NewPS)
+		{
+			Spawned->SetPlayerState(NewPS);
+		}
+	}
 
-				++Index;
+	if (AMainPlayerState* PS = Cast<AMainPlayerState>(Spawned->GetPlayerState()))
+	{
+		PS->SetPlayerIndex(Index);
+		if (bIsPlayer)
+		{
+			PS->SetStock(3);
+		}
+	}
+
+}
+
+void AGM_SingleMode::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if (!bGameStarted || bGameEnded || TotalAI <= 0) return;
+
+	int32 AliveAI = 0;
+
+	for (TActorIterator<APlayerCharacter> It(GetWorld()); It; ++It)
+	{
+		APlayerCharacter* AI = *It;
+		if (!AI)
+		{
+			continue;
+		}
+
+		AMainPlayerState* PS = Cast<AMainPlayerState>(AI->GetPlayerState());
+		if (!PS)
+		{
+			continue;
+		}
+
+
+		if (PS->GetPlayerIndex() != 0 && AI->IsAlive())
+		{
+			AliveAI++;
 		}
 	}
 
 
+	if (AliveAI == 0)
+	{
+		TriggerSingleGameEnd(true);
+		bGameEnded = true;
+	}
 }
-
 
 void AGM_SingleMode::HandlePlayerRespawn(AActor* PlayerActor)
 {
@@ -119,17 +169,14 @@ void AGM_SingleMode::HandlePlayerRespawn(AActor* PlayerActor)
 		if (Lives <= 0)
 		{
 			Pawn->Destroy();
-			TriggerSingleGameEnd(false); // 패배
+			TriggerSingleGameEnd(false);
 			return;
 		}
 
-		// 플레이어 리스폰
-		FString StartTag = TEXT("PlayerStart");
 		AActor* StartPoint = nullptr;
-
 		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
 		{
-			if (It->ActorHasTag(FName(*StartTag)))
+			if (It->ActorHasTag(TEXT("PlayerStart")))
 			{
 				StartPoint = *It;
 				break;
@@ -137,36 +184,20 @@ void AGM_SingleMode::HandlePlayerRespawn(AActor* PlayerActor)
 		}
 		if (!StartPoint) return;
 
-		UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance());
-		if (!GI) return;
-
-		FString CharacterID = GI->PlayerLobbyInfos[0].SelectedCharacterID;
-		TSubclassOf<APawn> CharacterClass = CharacterBPMap[CharacterID];
 		FVector Location = StartPoint->GetActorLocation();
-		FRotator Rotation = StartPoint->GetActorRotation();
 
-		APawn* NewPawn = GetWorld()->SpawnActor<APawn>(CharacterClass, Location, Rotation);
-		if (!NewPawn) return;
-
-		if (APlayerController* PlayerPC = UGameplayStatics::GetPlayerController(this, 0))
-		{
-			PlayerPC->Possess(NewPawn);
-		}
-
-		if (APlayerCharacter* PCChar = Cast<APlayerCharacter>(NewPawn))
-		{
-			PCChar->Respawn();
-		}
+		GetWorld()->GetTimerManager().SetTimerForNextTick([Pawn, Location]() {
+			Pawn->SetActorLocation(Location);
+			if (APlayerCharacter* Player = Cast<APlayerCharacter>(Pawn))
+			{
+				Player->Respawn();
+			}
+		});
 	}
 	else
 	{
 		Pawn->Destroy();
 		++DeadAI;
-
-		if (DeadAI >= TotalAI)
-		{
-			TriggerSingleGameEnd(true); 
-		}
 	}
 }
 
