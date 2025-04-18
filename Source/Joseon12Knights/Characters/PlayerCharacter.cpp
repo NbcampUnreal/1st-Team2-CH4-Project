@@ -85,7 +85,7 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 	Capsule->CanCharacterStepUpOn = ECB_No;
 	Capsule->ComponentTags.Add("Player");
 
-	
+
 
 	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
 	StatComponent = CreateDefaultSubobject<UStatComponent>(TEXT("StatComponent"));
@@ -129,7 +129,7 @@ void APlayerCharacter::InitializeData()
 {
 	MaxHealth = StatComponent->GetMaxHP();
 	bIsAlive = true;
-	
+
 	AMainPlayerState* PS = GetPlayerState<AMainPlayerState>();
 	if (PS)
 	{
@@ -139,8 +139,38 @@ void APlayerCharacter::InitializeData()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Fail"));
 	}
+
+	AMainPlayerController* PlayerController = Cast<AMainPlayerController>(GetController());
+
+	if (PlayerController)
+	{
+		SkillProgress = Cast<UProgressBar>(PlayerController->CharacterInfoWidget->GetWidgetFromName(FName("CoolTime_W")));
+		UltimateProgress = Cast<UProgressBar>(PlayerController->CharacterInfoWidget->GetWidgetFromName(FName("CoolTime_R")));
+	}
 }
 
+void APlayerCharacter::UpdateGaugeHandle(float RemainTime, float Duration, FTimerHandle TimerHandle, TFunction<void(float Value)> Delegate)
+{
+	if (GetWorld()->GetTimerManager().IsTimerActive(TimerHandle))
+	{
+		RemainTime = GetWorld()->GetTimerManager().GetTimerRemaining(TimerHandle);
+		Delegate(RemainTime / Duration);
+	}
+}
+
+void APlayerCharacter::UpdateSkillProgressHandle(float RemainTime, float Duration, FTimerHandle TimerHandle, UProgressBar* Progress, TFunction<void(float Value, UProgressBar* Progress)> Delegate)
+{
+	if (GetWorld()->GetTimerManager().IsTimerActive(TimerHandle))
+	{
+		RemainTime = GetWorld()->GetTimerManager().GetTimerRemaining(TimerHandle);
+		Delegate(RemainTime / Duration, Progress);
+	}
+}
+
+void APlayerCharacter::UpdateSkillGuage(float FillAmount, UProgressBar* ProgressBar)
+{
+	ProgressBar->SetPercent(FillAmount);
+}
 
 void APlayerCharacter::UpdateGauge(float FillAmount)
 {
@@ -152,7 +182,6 @@ void APlayerCharacter::UpdateGauge(float FillAmount)
 	{
 		PB->SetPercent(FillAmount);
 	}
-
 }
 
 void APlayerCharacter::RechargeGuardGauge()
@@ -181,7 +210,7 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 	Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	//if (!IsLocallyControlled()) return 0.0f;
 	if (bIsHit || !bIsAlive) return 0.0f;
-	
+
 	float KnockBackDistance = bIsGuarding ? 500.f : 1000.f;
 
 	FVector Direction = DamageCauser->GetActorLocation() - GetActorLocation();
@@ -192,7 +221,7 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 
 	FString AnimKey = bIsGuarding ? TEXT("GuardHit") : TEXT("Hit");
 	CurrentHealth = bIsGuarding ? CurrentHealth : CurrentHealth -= DamageAmount;
-	
+
 	UE_LOG(LogTemp, Warning, TEXT("Hit ! Current Health : %f"), CurrentHealth);
 
 	if (CurrentHealth <= 0)
@@ -223,7 +252,7 @@ float APlayerCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Damag
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnCapsuleOverlap);
 	WeaponComponent->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::OnWeaponOverlap);
 
@@ -246,11 +275,38 @@ void APlayerCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	UpdateMovementSpeed();
 
-	if (GetWorld()->GetTimerManager().IsTimerActive(GuardTimerHandle))
-	{
-		RemainTime = GetWorld()->GetTimerManager().GetTimerRemaining(GuardTimerHandle);
-		UpdateGauge(RemainTime / GuardDuration);
-	}
+	//if (GetWorld()->GetTimerManager().IsTimerActive(GuardTimerHandle))
+	//{
+	//	GuardRemainTime = GetWorld()->GetTimerManager().GetTimerRemaining(GuardTimerHandle);
+	//	UpdateGauge(GuardRemainTime / GuardDuration);
+	//}
+
+	UpdateGaugeHandle(GuardRemainTime, GuardDuration, GuardTimerHandle, [this](float FillAmount)
+		{
+			UpdateGauge(FillAmount);
+		});
+
+	UpdateSkillProgressHandle(SkillRemainTime, SkillCoolTime, SkillTimerHandle, SkillProgress, [this](float FillAmount, UProgressBar* Progress)
+		{
+			UpdateSkillGuage(FillAmount, SkillProgress);
+		});
+
+	UpdateSkillProgressHandle(UltimateRemainTime, UltimateCoolTime, UltimateTimerhandle, UltimateProgress, [this](float FillAmount, UProgressBar* Progress)
+		{
+			UpdateSkillGuage(FillAmount, UltimateProgress);
+		});
+
+	//if (GetWorld()->GetTimerManager().IsTimerActive(SkillTimerHandle))
+	//{
+	//	SkillRemainTime = GetWorld()->GetTimerManager().GetTimerRemaining(SkillTimerHandle);
+	//	UpdateGauge(SkillRemainTime / SkillCoolTime);
+	//}
+
+	//if (GetWorld()->GetTimerManager().IsTimerActive(UltimateTimerhandle))
+	//{
+	//	UltimateRemainTime = GetWorld()->GetTimerManager().GetTimerRemaining(UltimateTimerhandle);
+	//	UpdateGauge(UltimateTimerhandle / GuardDuration);
+	//}
 }
 
 void APlayerCharacter::UpdateMovementSpeed() // ë§??„ë ˆ?„ë§ˆ???¸ì¶œ?˜ì–´ ?´ë™ ?ë„ë¥??…ë°?´íŠ¸.
@@ -505,7 +561,7 @@ void APlayerCharacter::ServerGuard_Implementation()
 void APlayerCharacter::MulticastGuard_Implementation()
 {
 	if (bIsHit || !bIsAlive) return;
-	
+
 	if (!bIsGuarding)
 	{
 		GuardTimer();
@@ -534,7 +590,7 @@ void APlayerCharacter::ReleaseGuard(const FInputActionValue& Value)
 	UE_LOG(LogTemp, Warning, TEXT("Release"));
 
 	if (bIsHit || !bIsAlive || !bCanGuard) return;
-	
+
 	ServerReleaseGuard();
 }
 
@@ -603,7 +659,7 @@ void APlayerCharacter::MulticastAttack_Implementation()
 
 void APlayerCharacter::Dead()
 {
-	ServerDead(); 
+	ServerDead();
 	if (AGM_BaseMode* GM = Cast<AGM_BaseMode>(UGameplayStatics::GetGameMode(this)))
 	{
 		GM->HandlePlayerRespawn(this);

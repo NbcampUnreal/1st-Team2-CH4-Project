@@ -16,6 +16,7 @@ struct FInputActionValue;
 class UCameraComponent;
 class USpringArmComponent;
 class UWidgetComponent;
+class UProgressBar;
 
 UCLASS(Abstract, NotBlueprintable)
 class JOSEON12KNIGHTS_API APlayerCharacter : public ACharacter
@@ -39,6 +40,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
 	UWidgetComponent* OverheadWidget;
+	//UWidgetComponent* SkillCooltimeWidget;
+	//UWidgetComponent* UltimateCooltimeWidget;
 
 protected:
 	bool bIsAlive;
@@ -51,6 +54,26 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stat")
 	float MaxHealth;
 	float Defense;
+#pragma region Skill
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
+	float SkillCoolTime;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
+	float UltimateCoolTime;
+
+	float SkillRemainTime;
+	float UltimateRemainTime;
+
+	FTimerHandle SkillTimerHandle;
+	FTimerHandle UltimateTimerhandle;
+
+	void UpdateGaugeHandle(float RemainTime, float Duration, FTimerHandle TimerHandle, TFunction<void(float Value)> Delegate);
+	void UpdateSkillProgressHandle(float RemainTime, float Duration, FTimerHandle TimerHandle, UProgressBar* Progress, TFunction<void(float Value, UProgressBar* Progress)> Delegate);
+	void UpdateSkillGuage(float FillAmount, UProgressBar* ProgressBar);
+	UProgressBar* SkillProgress;
+	UProgressBar* UltimateProgress;
+
+#pragma endregion
+
 
 #pragma region Guard
 	UFUNCTION()
@@ -63,7 +86,7 @@ protected:
 	void GuardTimer();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Temp")
-	float RemainTime;
+	float GuardRemainTime;
 
 	const float GuardDuration = 5.0f;
 	float RechargeGuard;
