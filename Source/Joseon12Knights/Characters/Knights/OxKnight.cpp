@@ -49,11 +49,11 @@ void AOxKnight::MulticastSkill_Implementation()
 	}
 
 	bCanUseSkill = false;
-	GetWorldTimerManager().SetTimer(SkillCooldownTimerHandle, [this]()
+	GetWorldTimerManager().SetTimer(SkillTimerHandle, [this]()
 		{
 			bCanUseSkill = true;
 			UE_LOG(LogTemp, Warning, TEXT("OxKnight W Skill is available"));
-		}, 5.0f, false);
+		}, SkillCoolTime, false); //5.0
 
 	if (OxSkill1Effect)
 	{
@@ -147,11 +147,11 @@ void AOxKnight::MulticastUltimate_Implementation()
 	UE_LOG(LogTemp, Warning, TEXT("Fierce Rush!!!!!"));
 
 	bCanUseUltimate = false;
-	GetWorldTimerManager().SetTimer(UltimateCooldownTimerHandle, [this]()
+	GetWorldTimerManager().SetTimer(UltimateTimerhandle, [this]()
 		{
 			bCanUseUltimate = true;
 			UE_LOG(LogTemp, Warning, TEXT("OxKnight Ultimate is available!"));
-		}, 8.0f, false);
+		}, UltimateCoolTime, false); // 5.0f
 }
 
 // 돌진 후 충돌 검사를 수행하는 함수

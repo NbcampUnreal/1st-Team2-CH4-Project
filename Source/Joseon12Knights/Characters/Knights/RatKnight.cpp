@@ -111,11 +111,11 @@ void ARatKnight::MulticastSkill_Implementation()
 
 	// Cooldown Start
 	bCanUseSkill = false;
-	GetWorldTimerManager().SetTimer(SkillCooldownTimerHandle, [this]()
+	GetWorldTimerManager().SetTimer(SkillTimerHandle, [this]()
 		{
 			bCanUseSkill = true;
 			UE_LOG(LogTemp, Warning, TEXT("RatKnight W 스킬 사용 가능!"));
-		}, 8.0f, false);
+		}, SkillCoolTime, false);
 
 	DebugPrintTargetBuffs(Target);
 }
@@ -366,11 +366,11 @@ void ARatKnight::MulticastUltimate_Implementation()
 
 	// Cooldown Start
 	bCanUseUltimate = false;
-	GetWorldTimerManager().SetTimer(UltimateCooldownTimerHandle, [this]()
+	GetWorldTimerManager().SetTimer(UltimateTimerhandle, [this]()
 		{
 			bCanUseUltimate = true;
 			UE_LOG(LogTemp, Warning, TEXT("RatKnight 궁극기 사용 가능!"));
-		}, 8.0f, false);
+		}, UltimateCoolTime, false);
 }
 
 // ===========

@@ -56,11 +56,11 @@ void ATigerKnight::MulticastSkill_Implementation()
 
 	// 쿨다운 시작
 	bCanUseSkill = false;
-	GetWorldTimerManager().SetTimer(SkillCooldownTimerHandle, [this]()
+	GetWorldTimerManager().SetTimer(SkillTimerHandle, [this]()
 		{
 			bCanUseSkill = true;
 			UE_LOG(LogTemp, Warning, TEXT("TigerKnight W Skill is available"));
-		}, 7.0f, false);
+		}, SkillCoolTime, false);
 
 	if (TigerSkill1Effect)
 	{
@@ -164,11 +164,11 @@ void ATigerKnight::MulticastUltimate_Implementation()
 
 	// 쿨다운 시작
 	bCanUseUltimate = false;
-	GetWorldTimerManager().SetTimer(UltimateCooldownTimerHandle, [this]()
+	GetWorldTimerManager().SetTimer(UltimateTimerhandle, [this]()
 		{
 			bCanUseUltimate = true;
 			UE_LOG(LogTemp, Warning, TEXT("TigerKnight Ultimate is available!"));
-		}, 8.0f, false);
+		}, UltimateCoolTime, false);
 }
 
 // ==========
