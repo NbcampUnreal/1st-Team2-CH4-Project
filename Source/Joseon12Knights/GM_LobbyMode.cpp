@@ -57,7 +57,6 @@ AActor* AGM_LobbyMode::ChoosePlayerStart_Implementation(AController* Player)
         }
     }
 
-    UE_LOG(LogTemp, Error, TEXT("❌ PlayerStart named %s not found!"), *StartName);
     return Super::ChoosePlayerStart_Implementation(Player);
 }
 
@@ -66,15 +65,18 @@ void AGM_LobbyMode::PostLogin(APlayerController* NewPlayer)
 {
     Super::PostLogin(NewPlayer);
 
-    // 플레이어 번호 계산
-    int32 PlayerIndex = GetNumPlayers() - 1; 
+    int32 PlayerIndex = GetNumPlayers() - 1;
     PlayerNumberMap.Add(NewPlayer, PlayerIndex);
+
+    if (APS_FighterPlayerState* PS = Cast<APS_FighterPlayerState>(NewPlayer->PlayerState))
+    {
+        PS->LobbyPlayerIndex = PlayerIndex;
+    }
 
     FString CharacterKey = FString::FromInt(PlayerIndex + 1);
 
     if (!CharacterBPMap.Contains(CharacterKey))
     {
-        UE_LOG(LogTemp, Error, TEXT("❌ No blueprint found for CharacterKey: %s"), *CharacterKey);
         return;
     }
 
@@ -95,7 +97,6 @@ void AGM_LobbyMode::PostLogin(APlayerController* NewPlayer)
 
     if (!PlayerStart)
     {
-        UE_LOG(LogTemp, Error, TEXT("❌ No PlayerStart found with name %s"), *StartName);
         return;
     }
 

@@ -5,6 +5,8 @@
 #include "GI_GameCoreInstance.h"
 #include "Camera/CameraActor.h"
 #include "MainPlayerController.h"
+#include "MainPlayerState.h"
+#include "PlayerCharacter.h"
 
 AGM_SingleMode::AGM_SingleMode()
 {
@@ -16,15 +18,14 @@ void AGM_SingleMode::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// 시작 카메라 설정
 	for (TActorIterator<ACameraActor> It(GetWorld()); It; ++It)
 	{
 		if (It->ActorHasTag(TEXT("SingleStartCamera")))
 		{
-			APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-			if (PC)
+			if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
 			{
 				PC->SetViewTargetWithBlend(*It, 1.0f);
-				UE_LOG(LogTemp, Warning, TEXT("SetViewTarget → SingleStartCamera"));
 			}
 			break;
 		}
@@ -34,6 +35,7 @@ void AGM_SingleMode::BeginPlay()
 	{
 		const TArray<FPlayerLobbyInfo>& Players = GI->PlayerLobbyInfos;
 		int32 Index = 0;
+
 		for (const FPlayerLobbyInfo& Info : Players)
 		{
 			FString StartTag = (Index == 0) ? TEXT("PlayerStart") : FString::Printf(TEXT("PlayerStart%d"), Index + 1);
@@ -47,69 +49,56 @@ void AGM_SingleMode::BeginPlay()
 					break;
 				}
 			}
-
-			if (!StartPoint)
-			{
-				continue;
-			}
+			if (!StartPoint) continue;
 
 			FString CharacterID = Info.SelectedCharacterID;
-			TSubclassOf<APawn> CharacterClass = nullptr;
+			TSubclassOf<APawn> CharacterClass = (Index == 0)
+				? CharacterBPMap[CharacterID]
+				: CharacterBPMap_AI[CharacterID];
 
-			if (Index == 0)
-			{
-				if (CharacterBPMap.Contains(CharacterID))
+				if (!CharacterClass)
 				{
-					CharacterClass = CharacterBPMap[CharacterID];
+					UE_LOG(LogTemp, Warning, TEXT("❌ CharacterClass 없음: Index=%d, ID=%s"), Index, *CharacterID);
+					continue;
 				}
-			}
-			else
-			{
-				if (CharacterBPMap_AI.Contains(CharacterID))
+
+				FVector Location = StartPoint->GetActorLocation();
+				FRotator Rotation = StartPoint->GetActorRotation();
+
+				APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(CharacterClass, Location, Rotation);
+				if (!SpawnedPawn) continue;
+
+				if (Index == 0)
 				{
-					CharacterClass = CharacterBPMap_AI[CharacterID];
-				}
-			}
-
-
-			FVector Location = StartPoint->GetActorLocation();
-			FRotator Rotation = StartPoint->GetActorRotation();
-			APawn* SpawnedPawn = GetWorld()->SpawnActor<APawn>(CharacterClass, Location, Rotation);
-
-			if (!SpawnedPawn)
-			{
-				continue;
-			}
-
-			AMainPlayerState* PS = Cast<AMainPlayerState>(SpawnedPawn->GetPlayerState());
-			if (PS)
-			{
-				PS->SetStock(3);
-			}
-
-
-			if (Index == 0)
-			{
-				APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
-				if (PC)
-				{
-					PC->Possess(SpawnedPawn);
-					UE_LOG(LogTemp, Log, TEXT("Player 1 possessed 캐릭터: %s"), *Info.SelectedCharacterID);
+					// 플레이어 조작
+					if (APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0))
+					{
+						PC->Possess(SpawnedPawn);
+					}
 				}
 				else
 				{
-					UE_LOG(LogTemp, Error, TEXT("GetPlayerController 실패"));
+					// AI 조작
+					SpawnedPawn->AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+					++TotalAI;
 				}
-			}
-			else
-			{
-				SpawnedPawn->AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
-			}
 
-			++Index;
+				if (AMainPlayerState* PS = Cast<AMainPlayerState>(SpawnedPawn->GetPlayerState()))
+				{
+					PS->SetPlayerIndex(Index);
+					if (Index == 0)
+					{
+						PS->SetStock(3); // 플레이어만 스톡 설정
+					}
+				}
+
+				++Index;
 		}
 	}
+
+
 }
+
 
 void AGM_SingleMode::HandlePlayerRespawn(AActor* PlayerActor)
 {
@@ -117,18 +106,67 @@ void AGM_SingleMode::HandlePlayerRespawn(AActor* PlayerActor)
 	if (!Pawn) return;
 
 	AController* PC = Pawn->GetController();
-	if (!PC) return;
-
-	AMainPlayerState* PS = Cast<AMainPlayerState>(PC->PlayerState);
+	AMainPlayerState* PS = PC ? Cast<AMainPlayerState>(PC->PlayerState) : Cast<AMainPlayerState>(Pawn->GetPlayerState());
 	if (!PS) return;
 
-	int32 Lives = PS->GetStock();
-	Lives--;
-	PS->SetStock(Lives);
+	int32 Index = PS->GetPlayerIndex();
 
-	if (Lives <= 0)
+	if (Index == 0)
 	{
-		// 게임 종료 
+		int32 Lives = PS->GetStock();
+		PS->SetStock(--Lives);
+
+		if (Lives <= 0)
+		{
+			Pawn->Destroy();
+			TriggerSingleGameEnd(false); // 패배
+			return;
+		}
+
+		// 플레이어 리스폰
+		FString StartTag = TEXT("PlayerStart");
+		AActor* StartPoint = nullptr;
+
+		for (TActorIterator<APlayerStart> It(GetWorld()); It; ++It)
+		{
+			if (It->ActorHasTag(FName(*StartTag)))
+			{
+				StartPoint = *It;
+				break;
+			}
+		}
+		if (!StartPoint) return;
+
+		UGI_GameCoreInstance* GI = Cast<UGI_GameCoreInstance>(GetGameInstance());
+		if (!GI) return;
+
+		FString CharacterID = GI->PlayerLobbyInfos[0].SelectedCharacterID;
+		TSubclassOf<APawn> CharacterClass = CharacterBPMap[CharacterID];
+		FVector Location = StartPoint->GetActorLocation();
+		FRotator Rotation = StartPoint->GetActorRotation();
+
+		APawn* NewPawn = GetWorld()->SpawnActor<APawn>(CharacterClass, Location, Rotation);
+		if (!NewPawn) return;
+
+		if (APlayerController* PlayerPC = UGameplayStatics::GetPlayerController(this, 0))
+		{
+			PlayerPC->Possess(NewPawn);
+		}
+
+		if (APlayerCharacter* PCChar = Cast<APlayerCharacter>(NewPawn))
+		{
+			PCChar->Respawn();
+		}
+	}
+	else
+	{
+		Pawn->Destroy();
+		++DeadAI;
+
+		if (DeadAI >= TotalAI)
+		{
+			TriggerSingleGameEnd(true); 
+		}
 	}
 }
 
@@ -144,4 +182,27 @@ bool AGM_SingleMode::CanRespawn(AActor* PlayerActor) const
 	if (!PS) return false;
 
 	return PS->GetStock() > 0;
+}
+
+void AGM_SingleMode::TriggerSingleGameEnd(bool bPlayerWin)
+{
+	FString WinnerCharacter = TEXT("None");
+
+	for (APlayerState* PS : GameState->PlayerArray)
+	{
+		if (AMainPlayerState* MPS = Cast<AMainPlayerState>(PS))
+		{
+			if (MPS->GetPlayerIndex() == 0)
+			{
+				WinnerCharacter = MPS->GetCharacterName();
+
+				if (AMainPlayerController* MPC = Cast<AMainPlayerController>(MPS->GetOwner()))
+				{
+					int32 WinnerIndex = bPlayerWin ? 0 : 1;
+					MPC->ClientReceiveVictory(WinnerIndex, WinnerCharacter);
+				}
+				break;
+			}
+		}
+	}
 }
