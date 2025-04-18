@@ -145,18 +145,40 @@ void AGM_SingleMode::HandlePlayerRespawn(AActor* PlayerActor)
 		FVector Location = StartPoint->GetActorLocation();
 		FRotator Rotation = StartPoint->GetActorRotation();
 
-		APawn* NewPawn = GetWorld()->SpawnActor<APawn>(CharacterClass, Location, Rotation);
+		FTimerHandle Timer;
+
+		GetWorld()->GetTimerManager().SetTimer(
+			Timer,
+			FTimerDelegate::CreateLambda([Pawn,Location]()
+			{
+				if (Pawn)
+				{
+					Pawn->SetActorLocation(Location);
+					if (APlayerCharacter* Player = Cast<APlayerCharacter>(Pawn))
+					{
+						UE_LOG(LogTemp, Warning, TEXT("Respawn Call"));
+						Player->Respawn();
+					}
+				}
+			}),
+			1.0f,
+			false
+		);
+
+	
+
+	/*	APawn* NewPawn = GetWorld()->SpawnActor<APawn>(CharacterClass, Location, Rotation);
 		if (!NewPawn) return;
 
 		if (APlayerController* PlayerPC = UGameplayStatics::GetPlayerController(this, 0))
 		{
 			PlayerPC->Possess(NewPawn);
-		}
+		}*/
 
-		if (APlayerCharacter* PCChar = Cast<APlayerCharacter>(NewPawn))
-		{
-			PCChar->Respawn();
-		}
+		//if (APlayerCharacter* PCChar = Cast<APlayerCharacter>(NewPawn))
+		//{
+		//	PCChar->Respawn();
+		//}
 	}
 	else
 	{
