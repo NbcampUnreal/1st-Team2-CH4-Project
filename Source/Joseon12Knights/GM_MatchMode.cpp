@@ -189,24 +189,45 @@ void AGM_MatchMode::HandlePlayerRespawn(AActor* PlayerActor)
 	}
 
 
-	if (OldPawn) OldPawn->Destroy();
+	//if (OldPawn) OldPawn->Destroy();
 
 	FVector SpawnLoc = SpawnPoint->GetActorLocation() + FVector(0, 0, 50);
 	FRotator SpawnRot = SpawnPoint->GetActorRotation();
 	FActorSpawnParameters Params;
 	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	APawn* NewPawn = GetWorld()->SpawnActor<APawn>(CharacterClass, SpawnLoc, SpawnRot, Params);
-	if (NewPawn)
-	{
-		Controller->Possess(NewPawn);
-		if (APlayerCharacter* PCChar = Cast<APlayerCharacter>(NewPawn))
-		{
-			PCChar->Respawn(); // 체력 초기화
-		}
 
-		UE_LOG(LogTemp, Warning, TEXT("Player %d 리스폰 완료 at %s"), PlayerIndex, *SpawnName);
-	}
+	FTimerHandle Timer;
+
+	GetWorld()->GetTimerManager().SetTimer(
+		Timer,
+		FTimerDelegate::CreateLambda([OldPawn, SpawnLoc]()
+			{
+				if (OldPawn)
+				{
+					OldPawn->SetActorLocation(SpawnLoc);
+					if (APlayerCharacter* Player = Cast<APlayerCharacter>(OldPawn))
+					{
+						UE_LOG(LogTemp, Warning, TEXT("Respawn Call"));
+						Player->Respawn();
+					}
+				}
+			}),
+		1.0f,
+		false
+	);
+
+	//APawn* NewPawn = GetWorld()->SpawnActor<APawn>(CharacterClass, SpawnLoc, SpawnRot, Params);
+	//if (NewPawn)
+	//{
+	//	Controller->Possess(NewPawn);
+	//	if (APlayerCharacter* PCChar = Cast<APlayerCharacter>(NewPawn))
+	//	{
+	//		PCChar->Respawn(); // 체력 초기화
+	//	}
+
+	//	UE_LOG(LogTemp, Warning, TEXT("Player %d 리스폰 완료 at %s"), PlayerIndex, *SpawnName);
+	//}
 
 
 }

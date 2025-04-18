@@ -593,12 +593,12 @@ void APlayerCharacter::MulticastAttack_Implementation()
 
 void APlayerCharacter::Dead()
 {
+	ServerDead(); 
+
 	if (AGM_BaseMode* GM = Cast<AGM_BaseMode>(UGameplayStatics::GetGameMode(this)))
 	{
-		GM->HandlePlayerRespawn(this); 
+		GM->HandlePlayerRespawn(this);
 	}
-
-	ServerDead(); 
 }
 
 
@@ -610,8 +610,6 @@ void APlayerCharacter::ServerDead_Implementation()
 void APlayerCharacter::MulticastDead_Implementation()
 {
 	bIsAlive = false;
-
-
 }
 
 void APlayerCharacter::BeginAttack()
