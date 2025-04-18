@@ -109,6 +109,16 @@ APlayerCharacter::APlayerCharacter() : SkillAttackMontage(nullptr), UltimateMont
 
 void APlayerCharacter::Respawn()
 {
+	ServerRespawn();
+}
+
+void APlayerCharacter::ServerRespawn_Implementation()
+{
+	MulticastRespawn();
+}
+
+void APlayerCharacter::MulticastRespawn_Implementation()
+{
 	bIsDead = false;
 
 	CurrentHealth = MaxHealth;
@@ -594,7 +604,6 @@ void APlayerCharacter::MulticastAttack_Implementation()
 void APlayerCharacter::Dead()
 {
 	ServerDead(); 
-
 	if (AGM_BaseMode* GM = Cast<AGM_BaseMode>(UGameplayStatics::GetGameMode(this)))
 	{
 		GM->HandlePlayerRespawn(this);

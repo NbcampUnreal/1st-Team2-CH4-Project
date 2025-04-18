@@ -25,8 +25,14 @@ class JOSEON12KNIGHTS_API APlayerCharacter : public ACharacter
 public:
 	APlayerCharacter();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 	void Respawn();
+
+	UFUNCTION(Server, Reliable)
+	void ServerRespawn();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastRespawn();
 
 	UFUNCTION(BlueprintCallable)
 	void InitializeData();
